@@ -1,13 +1,13 @@
-#from urrlib import parse
+
 from urllib.request import urlopen
 import urllib
 from bs4 import BeautifulSoup
 import datetime
 
-import string
-import random
+from tempfile import mkdtemp, mkstemp
+
 import os
-'''ToDo
+'''ToDo:
 datenlabor.berlin beachten
 
 Weiterleitungen verfolgen 301 und 302
@@ -17,98 +17,105 @@ Dateinamen speichern, Fragezeichen ersetzen
 Server error 500
 
 '''
-def extractLinks( html):
-    
-    soup = BeautifulSoup(html.read())
+class crawler:
 
-    for a in soup.find_all('a', href=True):
-        if any(exclude in a['href'] for exclude in excludedLinks) or a['href'].endswith(excludeExtensions):
-            print ("Excluded URL:", a['href'])
-        else:
-            print ("Found the URL:", a['href'])
-            foundLinks.add(a['href'])
-    return
+    contentTypeHTML = 'text/html'
 
-def extractText( html):
-    
-    soup = BeautifulSoup(html)
+    excludedLinks = ['#', 'http://', 'https://', 'javascript:']
 
-    return soup.text()
+    excludeExtensions = ('.js', '.pdf', '.png', '.zip')
 
-def getAndSaveFile(linkName, directory, fileName):
-    
-    urllib.request.urlretrieve(linkName,directory + fileName)
+    foundLinks = set()
+
+    visitedLinks = set()
+
+    def __init__(self, baseURL):
+
+        self.baseURL = baseURL
+
+        self.baseFolder = mkdtemp('crawler')
+
+        self.createBaseFolder(self.baseFolder)
 
 
-def generateFilename( url):
+    def doCrawling(self, startLink):
 
-    return url.split('/')[-1]
+        self.foundLinks.add(startLink)
 
-def getTimeStamp():
+        while (self.foundLinks):
 
-    return '{:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
+            linkName = self.foundLinks.pop()
 
-def createBaseFolder(directory):
+            if linkName not in self.visitedLinks:
+                print(self.baseURL + linkName)
 
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+                fileHandle = urlopen(self.baseURL + linkName)
+
+                print("\nParsing: " + self.baseURL + linkName + " - " + str(fileHandle.getcode()))
+
+                if (fileHandle.getcode() == 200):
+
+                    if ((fileHandle.info()['Content-Type'].find(self.contentTypeHTML)) != -1):
+                        print("[" + self.getTimeStamp() + "] " + fileHandle.geturl())
+
+                        print('File seems to be html')
+
+                        print('Extracting links')
+
+                        self.extractLinks(fileHandle)
+
+                        self.getAndSaveFile(self.baseURL + linkName)
+
+                        self.visitedLinks.add(linkName)
+
+    def extractLinks(self, html):
+
+        soup = BeautifulSoup(html.read())
+
+        for a in soup.find_all('a', href=True):
+            if any(exclude in a['href'] for exclude in self.excludedLinks) or a['href'].endswith(self.excludeExtensions):
+                print ("Excluded URL:", a['href'])
+            else:
+                print ("Found the URL:", a['href'])
+                self.foundLinks.add(a['href'])
+        return
+
+    def extractText(self, html):
+
+        soup = BeautifulSoup(html)
+
+        return soup.text()
+
+    def getAndSaveFile(self, linkName):
+
+        #fileName.replace('?','')
+        #deaktiviert, da der Dateipfad zu lang werden kann (>255 Zeichen)
+
+        tmpFile = mkstemp(".html","", self.baseFolder)
+
+        urllib.request.urlretrieve( linkName, tmpFile[1] )
 
 
-contentTypeHTML = 'text/html'
+    def generateFilename(self, url):
 
-excludedLinks = ['#','http://','https://', 'javascript:']
+        return url.split('/')[-1]
 
-excludeExtensions = ('.js','.pdf','.zip')
+    def getTimeStamp(self, ):
 
+        return '{:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
 
-baseUrl = "http://www.datenlabor-berlin.de/"
+    def createBaseFolder(self, directory):
 
-baseFolder = '/tmp/crawler/'
-
-foundLinks = set()
-
-visitedLinks = set()
-
+        if not os.path.exists(directory):
+            os.makedirs(directory)
 
 def main():
 
-    foundLinks.add("index.php")
+    myCrawler = crawler("http://www.datenlabor-berlin.de/")
+    myCrawler.doCrawling("index.php")
 
-    createBaseFolder(baseFolder)
-
-    while (foundLinks):
-
-        linkName = foundLinks.pop()
-
-        if linkName not in visitedLinks:
-            print (baseUrl + linkName)
-
-            fileHandle = urlopen( baseUrl+linkName )
-
-            print ("\nParsing: " + baseUrl+linkName + " - " + str(fileHandle.getcode()))
-
-            if (fileHandle.getcode()==200):
-
-                if ((fileHandle.info()['Content-Type'].find(contentTypeHTML)) != -1):
-                    print("[" + getTimeStamp() + "] " + fileHandle.geturl())
-
-                    print('File seems to be html')
-
-                    print('Extracting links')
-
-                    extractLinks(fileHandle)
-
-                    getAndSaveFile(baseUrl+linkName,baseFolder,generateFilename(baseUrl+linkName))
-
-                    visitedLinks.add(linkName)
-
-
-
-
-
-    
-
-
+    print("\nSuccessfully parsed: " + myCrawler.baseURL)
+    print("Files stored in " + myCrawler.baseFolder)
 
 
         #ToDo: Save file
