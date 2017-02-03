@@ -4,7 +4,6 @@ import urllib
 from bs4 import BeautifulSoup
 import datetime
 import os
-
 from pageclass import Page
 
 '''ToDo:
