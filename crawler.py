@@ -1,3 +1,4 @@
+from tempfile import mkdtemp, mkstemp
 from urllib.request import urlopen
 import urllib
 from bs4 import BeautifulSoup
@@ -5,7 +6,7 @@ import datetime
 
 from pageclass import Page
 
-from tempfile import mkdtemp, mkstemp
+
 
 import os
 '''ToDo:
@@ -94,13 +95,7 @@ class Crawler:
                         self.visitedLinks.add(linkName)
 
                         self.pageList.append(page)
-
-    def extractText(self, html):
-        return
-
-        # soup = BeautifulSoup(html)
-
-        # return(html.body(text=True))
+        return self.pageList
 
     def extractLinks(self, soupHTML):
 
@@ -142,19 +137,3 @@ class Crawler:
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-def main():
-
-    myCrawler = Crawler("http://www.datenlabor-berlin.de/", ["datenlabor.berlin"])
-    myCrawler.doCrawling("index.php")
-
-    print("\nSuccessfully parsed: " + myCrawler.baseURL)
-    print("Files stored in " + myCrawler.baseFolder)
-
-    for x in myCrawler.pageList:
-        print(x.getTitle() + " (" + x.getFullURL() + ")")
-        print(x.getBody())
-
-
-        #ToDo: Save file
-if __name__ == "__main__":
-    main()
