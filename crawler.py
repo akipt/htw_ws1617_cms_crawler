@@ -1,4 +1,3 @@
-
 from urllib.request import urlopen
 import urllib
 from bs4 import BeautifulSoup
@@ -69,11 +68,11 @@ class Crawler:
 
                         print('Extracting links')
 
+                        page = Page()
+
                         page.body = fileHandle.read()
 
                         soup = BeautifulSoup(page.body)
-
-                        page = Page()
 
                         page.title = soup.title.text
 
