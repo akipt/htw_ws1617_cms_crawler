@@ -3,7 +3,7 @@ class Page:
 
     title = ''
 
-    body = ''
+    html = ''
 
     timestampVisited = ''
 
@@ -15,14 +15,12 @@ class Page:
 
     fullURL = ''
 
-    #def __init__(self):
-
-    def getTitle(self):
+    def get_title(self):
         return self.title
 
-    def getFullURL(self):
+    def get_full_url(self):
         return self.fullURL
 
-    def getBody(self):
+    def get_body(self):
         return self.body
 

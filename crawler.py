@@ -3,12 +3,10 @@ from urllib.request import urlopen
 import urllib
 from bs4 import BeautifulSoup
 import datetime
+import os
 
 from pageclass import Page
 
-
-
-import os
 '''ToDo:
 datenlabor.berlin beachten
 
@@ -23,47 +21,47 @@ class Crawler:
 
     contentTypeHTML = 'text/html'
 
-    excludedLinks = ['#', 'http://', 'https://', 'javascript:', '.png']
+    excluded_links = ['#', 'http://', 'https://', 'javascript:', '.png']
 
-    excludeExtensions = ('.js', '.pdf', '.png', '.zip')
+    exclude_extensions = ('.js', '.pdf', '.png', '.zip')
 
-    foundLinks = set()
+    found_links = set()
 
-    visitedLinks = set()
+    visited_links = set()
 
     pageList = []
 
+    whitelisted_domains = []
 
-    def __init__(self, baseURL, whitelistedDomains):
+    def __init__(self, base_url, whitelisted_domains):
 
-        self.baseURL = baseURL
+        self.base_url = base_url
 
-        self.whitelistedDomains = whitelistedDomains
+        self.whitelisted_domains = whitelisted_domains
 
         self.baseFolder = mkdtemp('crawler')
 
-        self.createBaseFolder(self.baseFolder)
+        self.create_base_folder(self.baseFolder)
 
+    def do_crawling(self, start_link):
 
-    def doCrawling(self, startLink):
+        self.found_links.add(start_link)
 
-        self.foundLinks.add(startLink)
+        while self.found_links:
 
-        while self.foundLinks:
+            link_name = self.found_links.pop()
 
-            linkName = self.foundLinks.pop()
+            if link_name not in self.visited_links:
+                print(self.base_url + link_name)
 
-            if linkName not in self.visitedLinks:
-                print(self.baseURL + linkName)
+                file_handle = urlopen(self.base_url + link_name)
 
-                fileHandle = urlopen(self.baseURL + linkName)
+                print("\nParsing: " + self.base_url + link_name + " - " + str(file_handle.getcode()))
 
-                print("\nParsing: " + self.baseURL + linkName + " - " + str(fileHandle.getcode()))
+                if file_handle.getcode() == 200:
 
-                if fileHandle.getcode() == 200:
-
-                    if (fileHandle.info()['Content-Type'].find(self.contentTypeHTML)) != -1:
-                        print("[" + self.getTimeStamp() + "] " + fileHandle.geturl())
+                    if (file_handle.info()['Content-Type'].find(self.contentTypeHTML)) != -1:
+                        print("[" + self.get_time_stamp() + "] " + file_handle.geturl())
 
                         print('File seems to be html')
 
@@ -71,69 +69,59 @@ class Crawler:
 
                         page = Page()
 
-                        page.body = fileHandle.read()
+                        page.html = file_handle.read()
 
-                        soup = BeautifulSoup(page.body)
+                        self.extract_links(page.html)
 
-                        page.title = soup.title.text
-
-                        self.extractLinks(soup)
-
-                        page.timestampVisited = self.getTimeStamp()
+                        page.timestampVisited = self.get_time_stamp()
 
                         page.folderName = self.baseFolder
 
-                        page.baseURL = self.baseURL
+                        page.baseURL = self.base_url
 
-                        page.fullURL = self.baseURL + linkName
+                        page.fullURL = self.base_url + link_name
 
+                        page.fileName = self.get_and_save_file(self.base_url + link_name)
 
-                        #page.body = self.extractText(fileHandle)
-
-                        page.fileName = self.getAndSaveFile(self.baseURL + linkName)
-
-                        self.visitedLinks.add(linkName)
+                        self.visited_links.add(link_name)
 
                         self.pageList.append(page)
         return self.pageList
 
-    def extractLinks(self, soupHTML):
+    def extract_links(self, html):
 
-        for a in soupHTML.find_all('a', href=True):
+        soup_html = BeautifulSoup(html)
+
+        for a in soup_html.find_all('a', href=True):
             # ToDo: Nicht schön diese Abfrage...
-            if ( a['href'].endswith(self.excludeExtensions)):
+            if a['href'].endswith(self.exclude_extensions):
                 print("Insignificant extension: ", a['href'])
-            elif any(whiteDomains in a['href'] for whiteDomains in self.whitelistedDomains):
+            elif any(whiteDomains in a['href'] for whiteDomains in self.whitelisted_domains):
                 print("Found the URL:", a['href'])
-            elif any(excludeURL in a['href'] for excludeURL in self.excludedLinks):
+            elif any(excludeURL in a['href'] for excludeURL in self.excluded_links):
                 print("Excluded URL:", a['href'])
             else:
                 print("Found the URL:", a['href'])
-                self.foundLinks.add(a['href'])
+                self.found_links.add(a['href'])
         return
 
-    def getAndSaveFile(self, linkName):
+    def get_and_save_file(self, link_name):
 
-        #fileName.replace('?','')
-        #deaktiviert, da der Dateipfad zu lang werden kann (>255 Zeichen)
+        tmp_file = mkstemp(".html", "", self.baseFolder)
 
-        tmpFile = mkstemp(".html","", self.baseFolder)
+        urllib.request.urlretrieve(link_name, tmp_file[1])
 
-        urllib.request.urlretrieve( linkName, tmpFile[1] )
+        return tmp_file[1]
 
-        return tmpFile[1]
-
-
-    def generateFilename(self, url):
+    def generate_filename(self, url):
 
         return url.split('/')[-1]
 
-    def getTimeStamp(self):
+    def get_time_stamp(self):
 
         return '{:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
 
-    def createBaseFolder(self, directory):
+    def create_base_folder(self, directory):
 
         if not os.path.exists(directory):
             os.makedirs(directory)
-
