@@ -5,8 +5,8 @@ from souppage import SoupPage
 
 def main():
 
-    my_crawler = Crawler("http://www.datenlabor-berlin.de/", ["datenlabor.berlin"])
-    page_list = my_crawler.do_crawling("index.php")
+    my_crawler = Crawler("http://www.datenlabor-berlin.de", ["www.datenlabor.berlin", "www.datenlabor-berlin.de"])
+    page_list = my_crawler.do_crawling
 
     # DEBUG
     print("\nSuccessfully parsed: " + my_crawler.base_url)
