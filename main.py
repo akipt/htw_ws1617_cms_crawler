@@ -2,7 +2,6 @@ from crawler import Crawler
 from textextractor import TextExtractor
 from souppage import SoupPage
 
-
 def main():
 
     my_crawler = Crawler("http://www.datenlabor-berlin.de", ["datenlabor.berlin", "datenlabor-berlin.de"])
