@@ -5,10 +5,7 @@ from souppage import SoupPage
 
 def main():
 
-    #my_crawler = Crawler("http://www.datenlabor-berlin.de", ["datenlabor.berlin", "datenlabor-berlin.de"])
-    my_crawler = Crawler("http://admin.kuleuven.be")
-    #my_crawler = Crawler("http://141.45.59.146")
-    #my_crawler = Crawler("www.admin.larla.net")
+    my_crawler = Crawler("http://www.datenlabor-berlin.de", ["datenlabor.berlin", "datenlabor-berlin.de"])
     page_list = my_crawler.do_crawling
 
     # DEBUG
