@@ -5,15 +5,16 @@ from souppage import SoupPage
 
 def main():
 
-    my_crawler = Crawler("http://www.datenlabor-berlin.de/", ["datenlabor.berlin"])
-    page_list = my_crawler.do_crawling("index.php")
+    my_crawler = Crawler("http://www.datenlabor-berlin.de", ["datenlabor.berlin", "datenlabor-berlin.de"])
+    page_list = my_crawler.do_crawling
 
     # DEBUG
-    print("\nSuccessfully parsed: " + my_crawler.base_url)
+    print("\nSuccessfully parsed: " + my_crawler.start_url + " (found %d files)" % len(my_crawler.pageList))
     print("Files stored in " + my_crawler.baseFolder)
 
-    for x in my_crawler.pageList:
-        print(x.get_full_url())
+    if len(my_crawler.pageList) > 0:
+        for x in my_crawler.pageList:
+            print(x.get_full_url())
     # END_OF_DEBUG
 
     soup_pages = []
