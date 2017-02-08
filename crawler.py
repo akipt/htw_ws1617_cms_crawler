@@ -1,3 +1,5 @@
+# coding: utf8
+
 from tempfile import mkdtemp, mkstemp
 import urllib.robotparser
 from urllib.parse import urlparse, urlsplit, urlunsplit, urljoin
