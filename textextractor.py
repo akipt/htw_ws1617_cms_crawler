@@ -7,5 +7,5 @@ class TextExtractor(object):
         soup = BeautifulSoup(html, 'lxml')
         return soup.title.text
 
-#soup = BeautifulSoup(page.html)
-#print (soup.article(text=True))
+        # soup = BeautifulSoup(page.html)
+        # print (soup.article(text=True))

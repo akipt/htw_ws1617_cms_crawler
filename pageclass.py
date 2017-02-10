@@ -21,6 +21,6 @@ class Page:
     def get_full_url(self):
         return self.fullURL
 
-    def get_body(self):
-        return self.body
+    def get_html(self):
+        return self.html
 

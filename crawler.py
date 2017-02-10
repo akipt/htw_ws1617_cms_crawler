@@ -1,17 +1,17 @@
-# coding: utf8
-
-from tempfile import mkdtemp, mkstemp
-import urllib.robotparser
-from urllib.parse import urlparse, urlsplit, urlunsplit, urljoin
-from urllib.request import Request, urlopen, HTTPErrorProcessor, build_opener
-from urllib.error import URLError, HTTPError
-from bs4 import BeautifulSoup, SoupStrainer
-import tldextract
 import datetime
-import time
 import os
-from pageclass import Page
+import time
+import urllib.robotparser
+from tempfile import mkdtemp, mkstemp
+from urllib.error import URLError, HTTPError
+from urllib.parse import urlparse, urlsplit, urlunsplit
+from urllib.request import Request, urlopen, build_opener, urlretrieve
+
+import tldextract
+from bs4 import BeautifulSoup, SoupStrainer
+
 from noredirection import NoRedirection
+from pageclass import Page
 
 '''ToDo:
 write log (adding timestamps)
@@ -19,9 +19,10 @@ fix problem with whitelist and generated absolute links -> change back to relati
 keep data and only crawl new if changed (keep date of last crawl and only fetch headers?)
 '''
 
+
 class Crawler:
     AGENT_NAME = 'CMSST4 Crawler'
-    polite_time = 2             # time in seconds
+    polite_time = 2  # time in seconds
     contentTypeHTML = 'text/html'
     excluded_links = ['#', 'http://', 'https://', 'javascript:']
     exclude_extensions = ('.js', '.pdf', '.png', '.zip', '.jpg', '.css', '.js', '.doc', '.ppt', '.mp3', '.gif', '.swf')
@@ -30,7 +31,9 @@ class Crawler:
     pageList = []
     whitelisted_domains = []
 
-    def __init__(self, start_url, whitelisted_domains=[]):
+    def __init__(self, start_url, whitelisted_domains=None):
+        if whitelisted_domains is None:
+            whitelisted_domains = []
         self.next_time = time.time()
         self.start_url = start_url
         scheme, host, path, query, fragment = urlsplit(start_url)
@@ -51,7 +54,7 @@ class Crawler:
         self.fill_whitelist(whitelisted_domains, host)
 
         # create folders
-        self.baseFolder = mkdtemp('crawler')
+        self.baseFolder = mkdtemp(self.get_time_stamp_wob(), 'crawler')
         self.create_base_folder(self.baseFolder)
 
         # load robots.txt file
@@ -65,7 +68,7 @@ class Crawler:
     def do_crawling(self):
 
         while self.found_links:
-            url = self.found_links.pop()    # e.g. http://test.org/index.php
+            url = self.found_links.pop()  # e.g. http://test.org/index.php
 
             # get absolute url
             parsed_url = urlparse(url)
@@ -102,25 +105,25 @@ class Crawler:
                 opener = build_opener(NoRedirection)
                 self.next_time = time.time() + self.polite_time
                 file_handle = opener.open(req)
-                #file_handle = urlopen(req)
-            except HTTPError as e:                  # TODO: Testen, ob der Crawler hier jemals reinläuft oder ob das weg kann
+                # file_handle = urlopen(req)
+            except HTTPError as e:  # TODO: Testen, ob der Crawler hier jemals reinläuft oder ob das weg kann
                 print('The server couldn\'t fulfill the request. Error code: ', e.code)
-                #continue
+                # continue
             except URLError as e:
                 print('We failed to reach a server. Reason: ', e.reason)
-                #continue
+                # continue
 
             code = file_handle.getcode()
             header = file_handle.info()
 
             # handle return codes
-            if code in range(300,308):
+            if code in range(300, 308):
                 redirection_target = file_handle.headers['Location']
                 print("  " + str(code) + " - Redirected! Append target %s to queue" % redirection_target)
                 self.found_links.add(redirection_target)
                 self.visited_links.add(url)
                 continue
-            elif code in range(400,599):
+            elif code in range(400, 599):
                 print("  " + str(code) + " - Error! Ignoring %s" % url)
                 continue
             elif code is 204:
@@ -130,8 +133,8 @@ class Crawler:
                 print("  " + str(code) + " - OK. Reading File...")
 
             # handle mimetype
-            mimetype = file_handle.info().get_content_type()        # TODO: evtl. nur main type (Text verwenden) -> .get_content_maintype()
-            if mimetype != self.contentTypeHTML :
+            mimetype = file_handle.info().get_content_type()  # TODO: evtl. nur main type (Text verwenden) -> .get_content_maintype()
+            if mimetype != self.contentTypeHTML:
                 print("  Ignoring Document due to wrong MimeType %s" % mimetype)
                 continue
 
@@ -168,7 +171,7 @@ class Crawler:
             new_url = link['href']
             scheme, host, path, query, fragment = urlsplit(new_url)
 
-            #parsed_newurl = urlparse(new_url)
+            # parsed_newurl = urlparse(new_url)
             # basic filtering
             if len(new_url) is 0:
                 print('      Ignoring empty link')
@@ -180,13 +183,12 @@ class Crawler:
                 print('      Ignoring non http(s) links %s' % new_url)
                 continue
             elif path.endswith(self.exclude_extensions):
-            #elif new_url.endswith(self.exclude_extensions): # TODO. evtl. nur path prüfen
                 print('      Ignoring due to file extension: %s' % new_url)
                 continue
 
-            # filtering II: domains from whitelist
-                    # transform to absolute link without fragments (# anchors)
-            if host is '' :
+                # filtering II: domains from whitelist
+                # transform to absolute link without fragments (# anchors)
+            if host is '':
                 host = parsed_url.hostname
             if scheme is '':
                 scheme = parsed_url.scheme
@@ -198,8 +200,8 @@ class Crawler:
                 print('      Ignoring links to external domain %s' % host)
                 continue
 
-            # filtering III:
-                    # get robots.txt
+                # filtering III:
+                # get robots.txt
             if host not in self.robotsfiles:
                 print('      Found new domain %s, get robots.txt file' % host)
                 self.fetch_robotsfile(host, urlunsplit([scheme, host, '', '', '']))
@@ -224,16 +226,23 @@ class Crawler:
 
     def get_and_save_file(self, link_name):
         tmp_file = mkstemp(".html", "", self.baseFolder)
-        urllib.request.urlretrieve(link_name, tmp_file[1])
+        urlretrieve(link_name, tmp_file[1])
         return tmp_file[1]
 
-    def generate_filename(self, url):
+    @staticmethod
+    def generate_filename(url):
         return url.split('/')[-1]
 
-    def get_time_stamp(self):
+    @staticmethod
+    def get_time_stamp():
         return '{:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
 
-    def create_base_folder(self, directory):
+    @staticmethod
+    def get_time_stamp_wob():
+        return '{:%Y%m%d-%H%M%S}'.format(datetime.datetime.now())
+
+    @staticmethod
+    def create_base_folder(directory):
         if not os.path.exists(directory):
             os.makedirs(directory)
 
@@ -257,7 +266,7 @@ class Crawler:
                 sdlist = tldextract.extract(d).subdomain.split('.')
                 if sdlist[0] == 'www':
                     sdlist.remove('www')
-                else:                       # domains with subdomains get www prefix -> TODO: is this correct? e.g. www.admin.test.org
+                else:  # domains with subdomains get www prefix -> TODO: is this correct? e.g. www.admin.test.org
                     sdlist.append('www')
                     sdlist.reverse()
                 subdomain = '.'.join(sdlist)

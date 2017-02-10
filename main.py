@@ -4,7 +4,6 @@ from souppage import SoupPage
 
 
 def main():
-
     my_crawler = Crawler("http://www.datenlabor-berlin.de", ["datenlabor.berlin", "datenlabor-berlin.de"])
     page_list = my_crawler.do_crawling
 
@@ -23,6 +22,7 @@ def main():
         souppage = SoupPage()
         souppage.title = TextExtractor.extract_title(page.html)
         soup_pages.append(souppage)
+
 
 if __name__ == "__main__":
     main()
