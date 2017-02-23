@@ -25,10 +25,11 @@ def main():
         souppage.title = TextExtractor.extract_title(page.html)
         soup_pages.append(souppage)
 
+    doc0 = "Wir führen ein Märchen-Theater auf. Sie zog ein neues Kleid an. Sie hatte ein Kleid an. Wir fangen an. Er hörte auf. Wir rufen die Männer an. Ich hole Papa ab. Höre mir zu! Höre auf! Wir packen sieben Äpfel ein. Sie gehen schonmal vor. Die Uhr geht vor. Man hört die Kinder im Bett reden."
     doc1 = "Einige recht berühmte Schriftsteller wohnten im kleinen Haus an der alten Brücke, z.B. Dante. Rapunzel ließ ihr langes, goldenes Haar herunter. Die Lesung des Märchens Rapunzel war hieb- und stichfest und dauerte sehr lange. Der Eintritt kostete 5,30€."
-    doc2 = "Es klapperten die Klapperschlangen bis ihre Klappern schlapper klangen. Wir führen ein Märchen-Theater auf."
-    doc3 = "Es war einmal ein Mann, der hieß Popan, der hatte sieben Söhne. Die sagten \"Vater, erzähl uns eine Geschichte!\" Da fing der Mann an. Wir fangen an. Er hörte auf. Wir rufen die Männer an."
-    docs = [doc1, doc2, doc3]
+    doc2 = "Es klapperten die Klapperschlangen bis ihre Klappern schlapper klangen."
+    doc3 = "Es war einmal ein Mann, der hieß Popan, der hatte sieben Söhne. Die sagten \"Vater, erzähl uns eine Geschichte!\" Da fing der Mann an."
+    docs = [doc0, doc1, doc2, doc3]
     l = LangProcessor()
     docID = 0
     ind = []

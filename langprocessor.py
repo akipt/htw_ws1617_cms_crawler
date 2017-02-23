@@ -16,7 +16,6 @@ class LangProcessor:
     def __init__(self, abbrevfile='abbreviations.txt', stopwords_file = 'stoppwortliste.txt'):
         self.loadAbbrevs(abbrevfile)
 
-
         self.ausschlusstags = ['$.', 'CARD', '$,', '$(']
 
         self.spellchecker = hunspell.HunSpell('/usr/share/hunspell/de_DE.dic',
@@ -28,24 +27,22 @@ class LangProcessor:
         self.loadStopwords(stopwords_file)
 
 
-    @staticmethod
-    def test2():
-        pass
-
-
     def getIndex(self, text, id):
         indexlist = []
-        indexdict = {}
 
         sents = self.splitSents(text)
 
         for sent in sents:
             sent = self.removeAbbrev(sent)
             tokens = self.splitTokens(sent)
-            tokens = self.removePunct(tokens)
             postags = self.doPosTagging(tokens)
+            self.findCompoundVerbs(postags, tokens)
+            self.removePunct(postags, tokens)
+            #postags = self.doPosTagging(tokens)
+            ind = -1
 
             for p in postags:
+                ind+= 1
                 #if p[1] in self.ausschlusstags:
                 #    continue
                 if p[1] == 'NE':
@@ -56,6 +53,15 @@ class LangProcessor:
                         continue
 
                     corrwort = self.correct_typo(wort)
+                    if len(corrwort.split(' ')) > 1:    # wenn Korrektur mehr als 1 Wort ergibt: in Postag-Liste einfügen und einzeln verarbeiten
+                        ntokens = corrwort.split(' ')
+                        npostags = self.doPosTagging(ntokens)
+                        laenge = len(npostags)
+                        for i in range(0, laenge):
+                            position = ind + i + 1
+                            postags.insert(position, npostags[i])
+                        continue
+
                     lemma = self.find_lemma(corrwort)
 
                 token = lemma.casefold()
@@ -130,39 +136,53 @@ class LangProcessor:
         return postags
 
 
-    # umbenennen
-    def removePunct(self, tokens):
-        postags = self.doPosTagging(tokens)
-        words = []
+    def removePunct(self, postags, tokens):
+        removelist = []
 
         for t in postags:
-            if t[1] not in self.ausschlusstags:
-                words.append(t[0])
+            if t[1] in self.ausschlusstags:
+                tokens.remove(t[0])
+                removelist.append(t)
 
-        self.correctVerbs(postags, words)
-        return words
+        for r in removelist:
+            postags.remove(r)
 
 
-    def correctVerbs(self, postags, words):
-        cpv = nltk.RegexpParser('VERB: {<VVFIN><ART>?<NN>?<APPR>}')
+    def findCompoundVerbs(self, postags, words):
+        grammar = r"""
+                CV:
+                    {<VVFIN|VAFIN><ART>?<ADJA|CARD>?<NN><APPR|PTKVZ>} # Rule 1
+                    {<VVFIN><NE><APPR|PTKVZ>} # Rule 2
+                    {<VVFIN|VAFIN><ADV>?<APPR>} # Rule 3
+                    """
+        cpv = nltk.RegexpParser(grammar)
 
         tree = cpv.parse(postags)
         #zus = []
         for subtree in tree.subtrees():
 
-            if subtree.label() == 'VERB':
+            if subtree.label() == 'CV':
                 # print(subtree)
-                text1 = ''
-                text2 = ''
+                appr, verb, apprpos, verbpos = '','','',''
                 for s in subtree:
-                    if s[1] == 'APPR':
-                        text1 = s[0]
-                        words.remove(s[0])
-                    elif s[1] == 'VVFIN':
-                        text2 = s[0]
+                    if s[1] == 'APPR' or s[1] == 'PTKVZ':
+                        appr = s[0]
+                        apprpos = s[1]
+                    elif s[1] == 'VVFIN' or s[1] == 'VAFIN':
+                        verb = s[0]
                         ind = words.index(s[0])
-                words[ind] = text1 + text2
-                #zus.append(text1 + text2)
+                        verbpos = s[1]
+
+                neuverb = appr + verb
+                print(neuverb)
+                if self.spellchecker:
+                    corrspell = self.spellchecker.spell(neuverb)
+                    if corrspell:
+                        words[ind] = neuverb
+                        postags[ind] = (neuverb, verbpos)
+                        words.remove(appr)
+                        postags.remove((appr, apprpos))
+
 
 
     @staticmethod
