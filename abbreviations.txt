@@ -1,0 +1,29 @@
+allg.;allgemein
+bzw.;beziehungsweise
+bspw.;beispielsweise
+b.w.;bitte wenden
+d.h.;das heißt
+d.i.;das ist
+etc.;etcetera
+evtl.;eventuell
+geb.;geborene
+ggf.;gegebenenfalls
+i.A.;im Allgemeinen
+n.Chr.;nach Christus
+od.;oder
+s.;siehe
+s.a.;siehe auch
+s.o.;siehe oben
+s.u.;siehe unten
+u.;und
+u.a.;und andere
+u.Ä.;Ähnliche
+u.U.;unter Umständen
+u.z.;und zwar
+usw.;und so weiter
+v.a.;vor allem
+v.Chr.;vor Christus
+vgl.;vergleiche
+z.B.;zum Beispiel
+z.T.;zum Teil
+z.Zt.;zur Zeit
