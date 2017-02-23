@@ -1,3 +1,7 @@
 .idea
 __pycache__
 /sitemapparser.py
+/corpora/part_A.conll
+/corpora/part_B.conll
+/corpora/part_C.conll
+/corpora/tiger_release_aug07.corr.16012013.conll09
