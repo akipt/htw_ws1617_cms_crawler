@@ -34,8 +34,12 @@ class LangProcessor:
 
         for sent in sents:
             sent = self.removeAbbrev(sent)
+            sent = self.removeHyphens(sent)
             tokens = self.splitTokens(sent)
             postags = self.doPosTagging(tokens)
+
+            # Bindestrich-Substantive behandeln (Chunking)
+            self.hyphenCorrection(postags, tokens)
 
             # zusammengesetzte Verben suchen (Chunking)
             self.findCompoundVerbs(postags, tokens)
@@ -105,10 +109,8 @@ class LangProcessor:
 
 
     def removeAbbrev(self, t):
-        text = []
         for abbrev in self.abbrevs:
             t = t.replace(abbrev, self.abbrevs[abbrev])
-        #text.append(t)
         return t
 
 
@@ -122,6 +124,10 @@ class LangProcessor:
                         self.abbrevs[a] = w.strip()
         except FileNotFoundError:
             print("No Abbreviations found.")
+
+    def removeHyphens(self, t):
+        t = t.replace('-', ' ')
+        return t
 
 
     def splitSents(self, text):
@@ -149,9 +155,10 @@ class LangProcessor:
     def findCompoundVerbs(self, postags, words):
         grammar = r"""
                 CV:
-                    {<VVFIN|VAFIN><ART>?<ADJA|CARD>?<NN><APPR|PTKVZ>} # Rule 1
+                    {<VVFIN|VAFIN><ART|PIAT>?<PTKA>?<ADJA>?<NN><APPR|PTKVZ>} # Rule 1a
+                    {<VVFIN|VAFIN><ART|PIAT>?<CARD|PIDAT>?<NN><APPR|PTKVZ>} # Rule 1b
                     {<VVFIN><NE><APPR|PTKVZ>} # Rule 2
-                    {<VVFIN|VAFIN><ADV>?<APPR>} # Rule 3
+                    {<VVFIN|VAFIN><ADV>?<APPR|PTKVZ>} # Rule 3
                     """
         cpv = nltk.RegexpParser(grammar)
 
@@ -265,6 +272,40 @@ class LangProcessor:
             print("Stopword List could not be loaded.")
 
 
+    def hyphenCorrection(self, postags, tokens):
+        zus = ''
+        removelist = []
+        grammar = r"""
+                        NP:
+                            {<NN|NE><NN|NE>+} # Rule 1
+                            {<NN|NE><PPER><NN|NE>*} # Deppen-Apostroph
+                            """
+        cpv = nltk.RegexpParser(grammar)
 
+        tree = cpv.parse(postags)
+        for subtree in tree.subtrees():
+
+            if subtree.label() == 'NP':
+                for word, pos in subtree:
+                    if pos == 'NN' or pos =='NE':   # NE nur, weil oft nicht richtig getaggt wird
+                        if zus == '':
+                            zus = word
+                            ind = tokens.index(word)
+                        else:
+                            zus += word.lower()
+                            removelist.append((word, pos))
+                    elif word == '\'s':
+                        zus += 's'
+                        removelist.append((word, pos))
+
+                if self.spellchecker:
+                    corrspell = self.spellchecker.spell(zus)
+                    if corrspell:
+                        tokens[ind] = zus
+                        postags[ind] = (zus, 'NN')
+
+                        for w,p in removelist:
+                            tokens.remove(w)
+                            postags.remove((w, p))
 
 
