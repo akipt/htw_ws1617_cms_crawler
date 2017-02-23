@@ -36,35 +36,45 @@ class LangProcessor:
             sent = self.removeAbbrev(sent)
             tokens = self.splitTokens(sent)
             postags = self.doPosTagging(tokens)
-            self.findCompoundVerbs(postags, tokens)
-            self.removePunct(postags, tokens)
-            #postags = self.doPosTagging(tokens)
-            ind = -1
 
-            for p in postags:
-                ind+= 1
-                #if p[1] in self.ausschlusstags:
-                #    continue
-                if p[1] == 'NE':
-                    lemma = p[0]
+            # zusammengesetzte Verben suchen (Chunking)
+            self.findCompoundVerbs(postags, tokens)
+
+            # ab hier wortweise...
+            for ind in range(0, len(postags)):
+                wort, pos = postags[ind]
+
+                # Satzzeichen und Zahlen entfernen (anhand POS-Tags)
+                if pos in self.ausschlusstags:
+                    continue
+
+                # Namen werden nicht geprüft
+                if pos == 'NE':
+                    lemma = wort
+
+                # alle anderen Wörter verarbeiten
                 else:
-                    wort = p[0]
+                    # Stoppwörter entfernen
                     if wort.casefold() in self.stopwords:
                         continue
 
+                    # Tippfehler korrigieren
                     corrwort = self.correct_typo(wort)
                     if len(corrwort.split(' ')) > 1:    # wenn Korrektur mehr als 1 Wort ergibt: in Postag-Liste einfügen und einzeln verarbeiten
                         ntokens = corrwort.split(' ')
                         npostags = self.doPosTagging(ntokens)
-                        laenge = len(npostags)
-                        for i in range(0, laenge):
+                        for i in range(0, len(npostags)):
                             position = ind + i + 1
                             postags.insert(position, npostags[i])
                         continue
 
+                    # Lemmatisieren
                     lemma = self.find_lemma(corrwort)
 
+                # Normalisieren (Kleinschreibung)
                 token = lemma.casefold()
+
+                # Indexliste aufbauen
                 indexlist.append((token, id))
 
         return indexlist
@@ -136,18 +146,6 @@ class LangProcessor:
         return postags
 
 
-    def removePunct(self, postags, tokens):
-        removelist = []
-
-        for t in postags:
-            if t[1] in self.ausschlusstags:
-                tokens.remove(t[0])
-                removelist.append(t)
-
-        for r in removelist:
-            postags.remove(r)
-
-
     def findCompoundVerbs(self, postags, words):
         grammar = r"""
                 CV:
@@ -164,17 +162,16 @@ class LangProcessor:
             if subtree.label() == 'CV':
                 # print(subtree)
                 appr, verb, apprpos, verbpos = '','','',''
-                for s in subtree:
-                    if s[1] == 'APPR' or s[1] == 'PTKVZ':
-                        appr = s[0]
-                        apprpos = s[1]
-                    elif s[1] == 'VVFIN' or s[1] == 'VAFIN':
-                        verb = s[0]
-                        ind = words.index(s[0])
-                        verbpos = s[1]
+                for word,pos in subtree:
+                    if pos == 'APPR' or pos == 'PTKVZ':
+                        appr = word
+                        apprpos = pos
+                    elif pos == 'VVFIN' or pos == 'VAFIN':
+                        verb = word
+                        ind = words.index(word)
+                        verbpos = pos
 
                 neuverb = appr + verb
-                print(neuverb)
                 if self.spellchecker:
                     corrspell = self.spellchecker.spell(neuverb)
                     if corrspell:
@@ -255,22 +252,6 @@ class LangProcessor:
 
         return neu_w
 
-    # überflüssig
-    def getLemma(self, w):
-        # lemmatize
-        w_lemma = self.find_lemma(w)
-
-        # no lemma? look for spelling mistakes
-        if not w_lemma:
-            w = self.correct_typo(w)
-            w_lemma = self.find_lemma(w)
-
-        # fallback
-        if not w_lemma:
-            w_lemma = w
-
-        return w_lemma
-
 
     def loadStopwords(self, stopwords_file):
         try:
@@ -282,5 +263,8 @@ class LangProcessor:
             # print(stopwords)
         except:
             print("Stopword List could not be loaded.")
+
+
+
 
 
