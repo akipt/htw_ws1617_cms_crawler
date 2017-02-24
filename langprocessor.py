@@ -85,23 +85,24 @@ class LangProcessor:
 
     @staticmethod
     def invert_index(index):
-        index.sort()
         inv_ind = {}
-
         term = ''
         docfreq = 1
         pl = []
 
-        for tup in index:
-            if tup[0] == term:
+        index.sort()
+
+        for token, docid in index:
+            if token == term:
                 docfreq += 1
-                pl.append(tup[1])
+                pl.append(docid)
             else:
                 if term != '':
-                    inv_ind[(term, docfreq)] = set(pl)
-                term = tup[0]
+                    #inv_ind[(term, docfreq)] = set(pl)
+                    inv_ind[term] = (docfreq, set(pl))
+                term = token
                 docfreq = 1
-                pl = [tup[1]]
+                pl = [docid]
 
         return inv_ind
 

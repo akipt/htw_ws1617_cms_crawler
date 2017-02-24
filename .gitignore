@@ -5,3 +5,5 @@ __pycache__
 /corpora/part_B.conll
 /corpora/part_C.conll
 /corpora/tiger_release_aug07.corr.16012013.conll09
+/pickle/invertierter_index.pickle
+/.ipynb_checkpoints/Suche-checkpoint.ipynb

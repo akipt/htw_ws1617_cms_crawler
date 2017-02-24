@@ -2,6 +2,7 @@ from crawler import Crawler
 from textextractor import TextExtractor
 from souppage import SoupPage
 from langprocessor import LangProcessor
+import pickle
 
 
 def main():
@@ -36,7 +37,8 @@ def main():
     docs['doc5'] = ('url-platzhalter', 'An- und Abreise. Theater-Spiel. hieb- und stichfest. An-\ngekommen. Spielspaß und -freude. Verweildauer, -länge und -kosten.')
 
     inv_ind = l.get_inverse_index(docs)
-    print(inv_ind)
+    with open('pickle/invertierter_index.pickle', 'wb') as f:
+        pickle.dump(inv_ind, f, protocol=2)
 
 if __name__ == "__main__":
     main()
