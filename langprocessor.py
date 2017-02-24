@@ -34,13 +34,12 @@ class LangProcessor:
         sents = self.splitSents(text)
 
         for sent in sents:
-            #sent = self.removeAbbrev(sent)  # TODO: vermurkst Wörter am Satzende die auf u aufhören (wegen u.)
-            sent = self.removeHyphens(sent) # TODO: nur - im Wort entfernen, Wörter mit - am Wortende ganz wegschmeißen
+            sent = self.removeHyphens(sent)
             tokens = self.splitTokens(sent)
             postags = self.doPosTagging(tokens)
 
             # Bindestrich-Substantive behandeln (Chunking)
-            self.hyphenCorrection(postags, tokens)  #TODO: umbenennen
+            self.findCompoundNouns(postags, tokens)
 
             # zusammengesetzte Verben suchen (Chunking)
             self.findCompoundVerbs(postags, tokens)
@@ -128,20 +127,18 @@ class LangProcessor:
         except FileNotFoundError:
             print("No Abbreviations found.")
 
-    def removeHyphens(self, t):
-        #t = t.replace('-', ' ')
 
-        #t = 'Märchen-Theater Theater- hilf-, planlos und -voll. Max- und minimal. An- und Abreise. Spielspaß und -freude. Verweildauer, -länge und -freude. Ab-\ngenommen'
-        #regex = re.compile(r"[a-z]+-[a-z]+", re.IGNORECASE)
-        #num = re.sub(r'abc(def)ghi', '\1', bla)
-        #test = re.findall(r'([A-Za-zÄÖÜäöüß]+)-([A-Za-zÄÖÜäöüß]+)', text)
-        #test = re.findall(r'\w+-\w+', text)
-        #text = re.sub(r"\w+-[\s.,]", '', t)
-        text = re.sub(r"\w+-([.,]|\sund\s)", '', t) # unvollständigen Kompositionsteil vorn finden (An- und Abreise)
-        text = re.sub(r"(\sund\s|,\s)-\w+", '', text)   # unvollständigen Kompositionsteil hinten finden (Spielspaß und -freude)
-        #text = re.sub(r"\w+-[\n\r]+\w+", '', text)
-        text = re.sub(r"-[\n\r]+", '', text)    # Entferne hart codierte Worttrennungen
-        text = text.replace('-', ' ')   # übrig bleiben Bindestriche im Wort, Gedankenstriche
+    def removeHyphens(self, t):
+
+        # Entferne unvollständige Kompositionsteile (inkl. 'und')
+        text = re.sub(r"\w+-([.,]|\sund\s)", '', t)     # vorn (An- und Abreise)
+        text = re.sub(r"(\sund\s|,\s)-\w+", '', text)   # hinten (Spielspaß und -freude)
+
+        # Entferne Bindestriche in hart codierten Worttrennungen
+        text = re.sub(r"-[\n\r]+", '', text)
+
+        # übrig bleiben Bindestriche im Wort und Gedankenstriche -> durch Leerzeichen ersetzen
+        text = text.replace('-', ' ')
 
         return text
 
@@ -171,11 +168,11 @@ class LangProcessor:
     def findCompoundVerbs(self, postags, words):
         grammar = r"""
                 CV:
-                    {<V.*><.*><PTKVZ>}
-                    {<V.*><ART|PIAT>?<PTKA>?<ADJA>?<NN><APPR>} # Rule 1a
-                    {<V.*><ART|PIAT>?<CARD|PIDAT|PROAV>?<NN><APPR>} # Rule 1b
-                    {<V.*><NE|PPER><APPR>} # Rule 2
-                    {<V.*><ADV>?<APPR>} # Rule 3
+                    {<V.*><.*><PTKVZ>}  # korrekt getaggt
+                    {<V.*><ART|PIAT>?<PTKA>?<ADJA>?<NN><APPR>} # Workaround 1a
+                    {<V.*><ART|PIAT>?<CARD|PIDAT|PROAV>?<NN><APPR>} # Workaround 1b
+                    {<V.*><NE|PPER><APPR>} # Workaround 2
+                    {<V.*><ADV>?<APPR>} # Workaround 3
                     """
         cpv = nltk.RegexpParser(grammar)
 
@@ -191,7 +188,7 @@ class LangProcessor:
                     if pos == 'PTKVZ':
                         appr = word
                         apprpos = pos
-                    elif pos == 'APPR' or pos == 'PTKVZ':
+                    elif pos == 'APPR':
                         appr = word
                         apprpos = pos
                     elif pos[0] == 'V':
@@ -293,7 +290,7 @@ class LangProcessor:
             print("Stopword List could not be loaded.")
 
 
-    def hyphenCorrection(self, postags, tokens):
+    def findCompoundNouns(self, postags, tokens):
         zus = ''
         removelist = []
         grammar = r"""
