@@ -84,7 +84,7 @@ class LangProcessor:
         return indexlist
 
     @staticmethod
-    def get_inverse_index(index):
+    def invert_index(index):
         index.sort()
         inv_ind = {}
 
@@ -104,6 +104,8 @@ class LangProcessor:
                 pl = [tup[1]]
 
         return inv_ind
+
+
 
     ##################################### Hilfsmethoden ##################################
 
