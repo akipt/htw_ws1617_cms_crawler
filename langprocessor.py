@@ -4,6 +4,7 @@ from ClassifierBasedGermanTagger import ClassifierBasedGermanTagger
 import pickle
 import hunspell
 from nltk.corpus import stopwords
+import re
 
 class LangProcessor:
     abbrevs = {}
@@ -33,13 +34,13 @@ class LangProcessor:
         sents = self.splitSents(text)
 
         for sent in sents:
-            sent = self.removeAbbrev(sent)
-            sent = self.removeHyphens(sent)
+            #sent = self.removeAbbrev(sent)  # TODO: vermurkst Wörter am Satzende die auf u aufhören (wegen u.)
+            sent = self.removeHyphens(sent) # TODO: nur - im Wort entfernen, Wörter mit - am Wortende ganz wegschmeißen
             tokens = self.splitTokens(sent)
             postags = self.doPosTagging(tokens)
 
             # Bindestrich-Substantive behandeln (Chunking)
-            self.hyphenCorrection(postags, tokens)
+            self.hyphenCorrection(postags, tokens)  #TODO: umbenennen
 
             # zusammengesetzte Verben suchen (Chunking)
             self.findCompoundVerbs(postags, tokens)
@@ -50,6 +51,8 @@ class LangProcessor:
 
                 # Satzzeichen und Zahlen entfernen (anhand POS-Tags)
                 if pos in self.ausschlusstags:
+                    continue
+                if len(wort) == 1:  # Fallback
                     continue
 
                 # Namen werden nicht geprüft
@@ -126,8 +129,21 @@ class LangProcessor:
             print("No Abbreviations found.")
 
     def removeHyphens(self, t):
-        t = t.replace('-', ' ')
-        return t
+        #t = t.replace('-', ' ')
+
+        #t = 'Märchen-Theater Theater- hilf-, planlos und -voll. Max- und minimal. An- und Abreise. Spielspaß und -freude. Verweildauer, -länge und -freude. Ab-\ngenommen'
+        #regex = re.compile(r"[a-z]+-[a-z]+", re.IGNORECASE)
+        #num = re.sub(r'abc(def)ghi', '\1', bla)
+        #test = re.findall(r'([A-Za-zÄÖÜäöüß]+)-([A-Za-zÄÖÜäöüß]+)', text)
+        #test = re.findall(r'\w+-\w+', text)
+        #text = re.sub(r"\w+-[\s.,]", '', t)
+        text = re.sub(r"\w+-([.,]|\sund\s)", '', t) # unvollständigen Kompositionsteil vorn finden (An- und Abreise)
+        text = re.sub(r"(\sund\s|,\s)-\w+", '', text)   # unvollständigen Kompositionsteil hinten finden (Spielspaß und -freude)
+        #text = re.sub(r"\w+-[\n\r]+\w+", '', text)
+        text = re.sub(r"-[\n\r]+", '', text)    # Entferne hart codierte Worttrennungen
+        text = text.replace('-', ' ')   # übrig bleiben Bindestriche im Wort, Gedankenstriche
+
+        return text
 
 
     def splitSents(self, text):
@@ -155,25 +171,30 @@ class LangProcessor:
     def findCompoundVerbs(self, postags, words):
         grammar = r"""
                 CV:
-                    {<VVFIN|VAFIN><ART|PIAT>?<PTKA>?<ADJA>?<NN><APPR|PTKVZ>} # Rule 1a
-                    {<VVFIN|VAFIN><ART|PIAT>?<CARD|PIDAT>?<NN><APPR|PTKVZ>} # Rule 1b
-                    {<VVFIN><NE><APPR|PTKVZ>} # Rule 2
-                    {<VVFIN|VAFIN><ADV>?<APPR|PTKVZ>} # Rule 3
+                    {<V.*><.*><PTKVZ>}
+                    {<V.*><ART|PIAT>?<PTKA>?<ADJA>?<NN><APPR>} # Rule 1a
+                    {<V.*><ART|PIAT>?<CARD|PIDAT|PROAV>?<NN><APPR>} # Rule 1b
+                    {<V.*><NE|PPER><APPR>} # Rule 2
+                    {<V.*><ADV>?<APPR>} # Rule 3
                     """
         cpv = nltk.RegexpParser(grammar)
 
         tree = cpv.parse(postags)
         #zus = []
         for subtree in tree.subtrees():
+            ind = 0
 
             if subtree.label() == 'CV':
                 # print(subtree)
                 appr, verb, apprpos, verbpos = '','','',''
                 for word,pos in subtree:
-                    if pos == 'APPR' or pos == 'PTKVZ':
+                    if pos == 'PTKVZ':
                         appr = word
                         apprpos = pos
-                    elif pos == 'VVFIN' or pos == 'VAFIN':
+                    elif pos == 'APPR' or pos == 'PTKVZ':
+                        appr = word
+                        apprpos = pos
+                    elif pos[0] == 'V':
                         verb = word
                         ind = words.index(word)
                         verbpos = pos
@@ -277,7 +298,7 @@ class LangProcessor:
         removelist = []
         grammar = r"""
                         NP:
-                            {<NN|NE><NN|NE>+} # Rule 1
+                            {<NN|NE><NN|NE>+} # Normal
                             {<NN|NE><PPER><NN|NE>*} # Deppen-Apostroph
                             """
         cpv = nltk.RegexpParser(grammar)
