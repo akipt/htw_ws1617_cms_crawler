@@ -105,7 +105,15 @@ class LangProcessor:
 
         return inv_ind
 
+    def get_inverse_index(self, docs):
+        indexlist = []
 
+        for doc_id in docs.keys():
+            url, doc = docs[doc_id]
+            indexlist += self.get_index(doc, doc_id)
+
+        inverse_index = self.invert_index(indexlist)
+        return inverse_index
 
     ##################################### Hilfsmethoden ##################################
 
