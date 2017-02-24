@@ -15,7 +15,7 @@ class LangProcessor:
     def __init__(self, abbrevfile='abbreviations.txt', stopwords_file='stoppwortliste.txt'):
         #self.load_abbrevs(abbrevfile)
 
-        self.ausschlusstags = ['$.', 'CARD', '$,', '$(']
+        self.ausschlusstags = ['$.', 'CARD', '$,', '$(', 'ITJ'] # see http://www.ims.uni-stuttgart.de/forschung/ressourcen/lexika/TagSets/stts-table.html
 
         self.spellchecker = hunspell.HunSpell('/usr/share/hunspell/de_DE.dic',
                                               '/usr/share/hunspell/de_DE.aff')
@@ -340,3 +340,5 @@ class LangProcessor:
                         for w, p in removelist:
                             tokens.remove(w)
                             postags.remove((w, p))
+
+        return postags

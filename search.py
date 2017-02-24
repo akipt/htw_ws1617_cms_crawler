@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import sys, getopt
 
@@ -19,7 +19,7 @@ def main(argv):
     ###### NLP ######
 
     # remove hyphens
-    #search_term = l.remove_hyphens(search_term) #TODO: prüfen ob das mit Komposita im Suchterm klappt, ansonsten lieber nur Bindestrich wegmachen und gut (Worttrennung?)
+    search_term = l.remove_hyphens(search_term)
 
     # tokenize
     query_tokens = search_term.split(' ')
@@ -28,6 +28,7 @@ def main(argv):
     query_tags = l.do_pos_tagging(query_tokens)
 
     # Bindestrich-Substantive?
+    l.find_compound_nouns(query_tags, query_tokens)
 
     #for token, pos in query_tags:
     for ind in range(0, len(query_tags)):
@@ -63,6 +64,7 @@ def main(argv):
 
         # ergebnisliste
         if token not in inv_ind:
+            results.append({})
             continue
         else:
             docfreq, docs = inv_ind[token]
@@ -104,6 +106,11 @@ def main(argv):
             print(e)
     else:
         print("Nichts gefunden.")
+        if len(results) > 1:
+            print('\nTreffer für einzelne Suchbegriffe:')
+            altergebnis = set(doc for docs in results for doc in docs)
+            for e in altergebnis:
+                print(e)
 
 
 
