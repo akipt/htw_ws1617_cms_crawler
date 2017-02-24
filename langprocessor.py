@@ -1,48 +1,45 @@
-from nltk.tokenize import word_tokenize, sent_tokenize
-import nltk
-from ClassifierBasedGermanTagger import ClassifierBasedGermanTagger
-import pickle
 import hunspell
-from nltk.corpus import stopwords
 import re
+import nltk
+import pickle
+
 
 class LangProcessor:
-    abbrevs = {}
+    #abbrevs = {}
     ausschlusstags = []
     spellchecker = None
     lemmata_mapping = {}
     spellchecker_enc = 'UTF-8'
     stopwords = []
 
-    def __init__(self, abbrevfile='abbreviations.txt', stopwords_file = 'stoppwortliste.txt'):
-        self.loadAbbrevs(abbrevfile)
+    def __init__(self, abbrevfile='abbreviations.txt', stopwords_file='stoppwortliste.txt'):
+        #self.load_abbrevs(abbrevfile)
 
         self.ausschlusstags = ['$.', 'CARD', '$,', '$(']
 
         self.spellchecker = hunspell.HunSpell('/usr/share/hunspell/de_DE.dic',
-                                         '/usr/share/hunspell/de_DE.aff')
+                                              '/usr/share/hunspell/de_DE.aff')
         self.spellchecker_enc = self.spellchecker.get_dic_encoding()
 
-        self.loadLemmata()
+        self.load_lemmata()
 
-        self.loadStopwords(stopwords_file)
+        self.load_stopwords(stopwords_file)
 
-
-    def getIndex(self, text, id):
+    def get_index(self, text, docid):
         indexlist = []
 
-        sents = self.splitSents(text)
+        sents = self.split_sents(text)
 
         for sent in sents:
-            sent = self.removeHyphens(sent)
-            tokens = self.splitTokens(sent)
-            postags = self.doPosTagging(tokens)
+            sent = self.remove_hyphens(sent)
+            tokens = self.split_tokens(sent)
+            postags = self.do_pos_tagging(tokens)
 
             # Bindestrich-Substantive behandeln (Chunking)
-            self.findCompoundNouns(postags, tokens)
+            self.find_compound_nouns(postags, tokens)
 
             # zusammengesetzte Verben suchen (Chunking)
-            self.findCompoundVerbs(postags, tokens)
+            self.find_compound_verbs(postags, tokens)
 
             # ab hier wortweise...
             for ind in range(0, len(postags)):
@@ -66,9 +63,10 @@ class LangProcessor:
 
                     # Tippfehler korrigieren
                     corrwort = self.correct_typo(wort)
-                    if len(corrwort.split(' ')) > 1:    # wenn Korrektur mehr als 1 Wort ergibt: in Postag-Liste einfügen und einzeln verarbeiten
+                    # wenn Korrektur mehr als 1 Wort ergibt: in Postag-Liste einfügen und einzeln verarbeiten
+                    if len(corrwort.split(' ')) > 1:
                         ntokens = corrwort.split(' ')
-                        npostags = self.doPosTagging(ntokens)
+                        npostags = self.do_pos_tagging(ntokens)
                         for i in range(0, len(npostags)):
                             position = ind + i + 1
                             postags.insert(position, npostags[i])
@@ -81,13 +79,14 @@ class LangProcessor:
                 token = lemma.casefold()
 
                 # Indexliste aufbauen
-                indexlist.append((token, id))
+                indexlist.append((token, docid))
 
         return indexlist
 
-    def getInverseIndex(self, index):
+    @staticmethod
+    def get_inverse_index(index):
         index.sort()
-        invInd = {}
+        inv_ind = {}
 
         term = ''
         docfreq = 1
@@ -99,40 +98,39 @@ class LangProcessor:
                 pl.append(tup[1])
             else:
                 if term != '':
-                    invInd[(term, docfreq)] = set(pl)
+                    inv_ind[(term, docfreq)] = set(pl)
                 term = tup[0]
                 docfreq = 1
                 pl = [tup[1]]
 
-        return invInd
-
+        return inv_ind
 
     ##################################### Hilfsmethoden ##################################
 
 
-    def removeAbbrev(self, t):
-        for abbrev in self.abbrevs:
-            t = t.replace(abbrev, self.abbrevs[abbrev])
-        return t
+    #/def remove_abbrev(self, t):
+    #    for abbrev in self.abbrevs:
+    #        t = t.replace(abbrev, self.abbrevs[abbrev])
+    #    return t
+
+    # def load_abbrevs(self, abbrev_file):
+    #     try:
+    #         with open(abbrev_file) as f:
+    #             for line in f:
+    #                 parts = line.split(';')
+    #                 if len(parts) == 2:
+    #                     a, w = parts[0], parts[1]
+    #                     self.abbrevs[a] = w.strip()
+    #     except FileNotFoundError:
+    #         print("No Abbreviations found.")
 
 
-    def loadAbbrevs(self, abbrev_file):
-        try:
-            with open(abbrev_file) as f:
-                for line in f:
-                    parts = line.split(';')
-                    if len(parts) == 2:
-                        a, w = parts[0], parts[1]
-                        self.abbrevs[a] = w.strip()
-        except FileNotFoundError:
-            print("No Abbreviations found.")
-
-
-    def removeHyphens(self, t):
+    @staticmethod
+    def remove_hyphens(t):
 
         # Entferne unvollständige Kompositionsteile (inkl. 'und')
-        text = re.sub(r"\w+-([.,]|\sund\s)", '', t)     # vorn (An- und Abreise)
-        text = re.sub(r"(\sund\s|,\s)-\w+", '', text)   # hinten (Spielspaß und -freude)
+        text = re.sub(r"\w+-([.,]|\sund\s)", '', t)  # vorn (An- und Abreise)
+        text = re.sub(r"(\sund\s|,\s)-\w+", '', text)  # hinten (Spielspaß und -freude)
 
         # Entferne Bindestriche in hart codierten Worttrennungen
         text = re.sub(r"-[\n\r]+", '', text)
@@ -143,7 +141,8 @@ class LangProcessor:
         return text
 
 
-    def splitSents(self, text):
+    @staticmethod
+    def split_sents(text):
 
         sent_tokenizer = nltk.data.load('tokenizers/punkt/german.pickle')
         sents = sent_tokenizer.tokenize(text)
@@ -151,12 +150,14 @@ class LangProcessor:
         return sents
 
 
-    def splitTokens(self, text):
+    @staticmethod
+    def split_tokens(text):
         tokens = nltk.word_tokenize(text)
         return tokens
 
 
-    def doPosTagging(self, tokens):
+    @staticmethod
+    def do_pos_tagging(tokens):
         with open('pickle/nltk_german_classifier_data_tiger.pickle', 'rb') as f:
             tagger = pickle.load(f)
 
@@ -165,7 +166,7 @@ class LangProcessor:
         return postags
 
 
-    def findCompoundVerbs(self, postags, words):
+    def find_compound_verbs(self, postags, words):
         grammar = r"""
                 CV:
                     {<V.*><.*><PTKVZ>}  # korrekt getaggt
@@ -177,14 +178,12 @@ class LangProcessor:
         cpv = nltk.RegexpParser(grammar)
 
         tree = cpv.parse(postags)
-        #zus = []
         for subtree in tree.subtrees():
             ind = 0
 
             if subtree.label() == 'CV':
-                # print(subtree)
-                appr, verb, apprpos, verbpos = '','','',''
-                for word,pos in subtree:
+                appr, verb, apprpos, verbpos = '', '', '', ''
+                for word, pos in subtree:
                     if pos == 'PTKVZ':
                         appr = word
                         apprpos = pos
@@ -206,7 +205,6 @@ class LangProcessor:
                         postags.remove((appr, apprpos))
 
 
-
     @staticmethod
     def read_lemmata_from_tiger_corpus(tiger_corpus_file, valid_cols_n=15, col_words=1, col_lemmata=2):
         lemmata_mapping = {}
@@ -222,13 +220,14 @@ class LangProcessor:
         return lemmata_mapping
 
 
-    def loadLemmata(self, loadnew = False):
+    def load_lemmata(self, loadnew=False):
         if loadnew:
             try:
                 self.lemmata_mapping = self.read_lemmata_from_tiger_corpus('corpora/part_A.conll', 10)
                 self.lemmata_mapping.update(self.read_lemmata_from_tiger_corpus('corpora/part_B.conll', 10))
                 self.lemmata_mapping.update(self.read_lemmata_from_tiger_corpus('corpora/part_C.conll', 10))
-                self.lemmata_mapping.update(self.read_lemmata_from_tiger_corpus('corpora/tiger_release_aug07.corr.16012013.conll09'))
+                self.lemmata_mapping.update(
+                    self.read_lemmata_from_tiger_corpus('corpora/tiger_release_aug07.corr.16012013.conll09'))
 
                 with open('pickle/lemmata_mapping.pickle', 'wb') as f:
                     pickle.dump(self.lemmata_mapping, f, protocol=2)
@@ -241,6 +240,7 @@ class LangProcessor:
 
 
     def find_lemma(self, w):
+        w_lemma = None
 
         # 1st try: read lemma from mapping
         if self.lemmata_mapping:
@@ -272,25 +272,23 @@ class LangProcessor:
                     neu_w = suggestions[0].decode(self.spellchecker_enc)
 
         # fallback
-        #if not neu_w:
+        # if not neu_w:
         #    neu_w = w
 
         return neu_w
 
-
-    def loadStopwords(self, stopwords_file):
+    def load_stopwords(self, stopwords_file):
         try:
             with open(stopwords_file) as f:
                 for line in f:
-                    if not line is '':
+                    if line is not '':
                         # print(line)
                         self.stopwords.append(line.strip().casefold())
-            # print(stopwords)
+                        # print(stopwords)
         except:
             print("Stopword List could not be loaded.")
 
-
-    def findCompoundNouns(self, postags, tokens):
+    def find_compound_nouns(self, postags, tokens):
         zus = ''
         removelist = []
         grammar = r"""
@@ -305,7 +303,7 @@ class LangProcessor:
 
             if subtree.label() == 'NP':
                 for word, pos in subtree:
-                    if pos == 'NN' or pos =='NE':   # NE nur, weil oft nicht richtig getaggt wird
+                    if pos == 'NN' or pos == 'NE':  # NE nur, weil oft nicht richtig getaggt wird
                         if zus == '':
                             zus = word
                             ind = tokens.index(word)
@@ -322,8 +320,6 @@ class LangProcessor:
                         tokens[ind] = zus
                         postags[ind] = (zus, 'NN')
 
-                        for w,p in removelist:
+                        for w, p in removelist:
                             tokens.remove(w)
                             postags.remove((w, p))
-
-

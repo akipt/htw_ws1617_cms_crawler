@@ -32,15 +32,15 @@ def main():
     doc4 = "Es fand ein Spurwechsel statt. Es fand ein Spur-Wechsel statt. Es fand ein Spur Wechsel statt. Das Mittag's Menü kostet nur 3€. Das Mittagsmenü ist billig. Das Mittags-Menü ist billig. Das MittagsMenü ist billig. Die Schiff Fahrts Gesellschaft ist pleite."
     docs = [doc0, doc1, doc2, doc3, doc4]
     l = LangProcessor()
-    docID = 0
+    doc_id = 0
     ind = []
 
     for doc in docs:
-        docID += 1
-        ind += l.getIndex(doc, docID)
+        doc_id += 1
+        ind += l.get_index(doc, doc_id)
 
-    invInd = l.getInverseIndex(ind)
-    print(invInd)
+    inv_ind = l.get_inverse_index(ind)
+    print(inv_ind)
 
 if __name__ == "__main__":
     main()
