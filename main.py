@@ -36,8 +36,20 @@ def main():
     docs['doc4'] = ('url-platzhalter', "Es fand ein Spurwechsel statt. Es fand ein Spur-Wechsel statt. Es fand ein Spur Wechsel statt. Das Mittag's Menü kostet nur 3€. Das Mittagsmenü ist billig. Das Mittags-Menü ist billig. Das MittagsMenü ist billig. Die Schiff Fahrts Gesellschaft ist pleite.")
     docs['doc5'] = ('url-platzhalter', 'An- und Abreise. Theater-Spiel. hieb- und stichfest. An-\ngekommen. Spielspaß und -freude. Verweildauer, -länge und -kosten.')
 
+    #test = l.tfidf('kosten', docs['doc1'][1], docs)
+    docs = {'doc0':('1', 'Test bla')}
+    for docid in docs.keys():
+        blob = docs[docid][1]
+        print("Top words in document {}".format(docid))
+        doc_index = l.get_index(blob, 0)
+        scores = {word: l.tfidf(word, doc_index, docs) for word,i in doc_index}
+        sorted_words = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+        for word, score in sorted_words[:3]:
+            print("\tWord: {}, TF-IDF: {}".format(word, round(score, 5)))
+
     inv_ind = l.get_inverse_index(docs)
     test = l.calculate_frequencies(inv_ind, len(docs))
+
     with open('pickle/invertierter_index.pickle', 'wb') as f:
         pickle.dump(inv_ind, f, protocol=2)
 

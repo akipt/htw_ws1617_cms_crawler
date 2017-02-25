@@ -110,6 +110,19 @@ class LangProcessor:
         return inv_ind
 
 
+    def calculate_frequencies(self, inv_index, docnum):
+        keyfigures = {}
+        for term in inv_index:
+            cf, pl = inv_index[term]    # cf [collection frequency] = total number of occurrences of a term in the collection
+            df = len(pl)                # df [document frequency] = number of documents in the collection that contain a term
+            idf = math.log10(docnum / df)
+            #tf =                        # tf [term frequency] = number of times a term appears in a document
+
+            keyfigures[term] = (cf, df, idf)
+
+        return keyfigures
+
+
     def get_inverse_index(self, docs):
         indexlist = []
 
@@ -123,6 +136,33 @@ class LangProcessor:
         return inverse_index
 
     ##################################### Hilfsmethoden ##################################
+
+    def tf(self, word, doc_index):
+        # if text == '':
+        #     return False
+        # doc_index = self.get_index(text, 0)
+        wordcount = len(doc_index)
+        termcount = len([i for i,ind in doc_index if i == word])
+        return termcount / wordcount
+
+    def n_containing(self, word, docs):
+        inv_ind = self.get_inverse_index(docs)
+        #inv_ind = {'lang': (3, {'doc1', 'doc3'}), 'kleid': (3, {'doc1', 'doc3'})}
+        if word not in inv_ind:
+            return 0
+        df = len(inv_ind[word][1])
+        return df
+
+    def idf(self, word, docs):
+        docnum = len(docs)
+        df = (1 + self.n_containing(word, docs))
+        return math.log(docnum / df)
+
+    def tfidf(self, word, doc_index, docs):
+        #doc_index = self.get_index(text, 0)
+        tf = self.tf(word, doc_index)
+        idf = self.idf(word, docs)
+        return  tf * idf
 
 
     #/def remove_abbrev(self, t):
