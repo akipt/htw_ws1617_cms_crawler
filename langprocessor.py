@@ -2,6 +2,7 @@ import hunspell
 import re
 import nltk
 import pickle
+import math
 
 
 class LangProcessor:
@@ -26,7 +27,7 @@ class LangProcessor:
         self.load_stopwords(stopwords_file)
 
     def get_index(self, text, docid):
-        indexlist = []
+        doc_index = []
 
         sents = self.split_sents(text)
 
@@ -42,13 +43,10 @@ class LangProcessor:
             self.find_compound_verbs(postags, tokens)
 
             # ab hier wortweise...
-            for ind in range(0, len(postags)):
-                wort, pos = postags[ind]
+            for ind, (wort, pos) in enumerate(postags):
 
-                # Satzzeichen und Zahlen entfernen (anhand POS-Tags)
-                if pos in self.ausschlusstags:
-                    continue
-                if len(wort) == 1:  # Fallback
+                # Satzzeichen und Zahlen entfernen
+                if pos in self.ausschlusstags or len(wort) == 1:
                     continue
 
                 # Namen werden nicht geprüft
@@ -65,11 +63,10 @@ class LangProcessor:
                     corrwort = self.correct_typo(wort)
                     # wenn Korrektur mehr als 1 Wort ergibt: in Postag-Liste einfügen und einzeln verarbeiten
                     if len(corrwort.split(' ')) > 1:
-                        ntokens = corrwort.split(' ')
-                        npostags = self.do_pos_tagging(ntokens)
-                        for i in range(0, len(npostags)):
+                        npostags = self.do_pos_tagging(corrwort.split(' '))
+                        for i, newpostag in enumerate(npostags):
                             position = ind + i + 1
-                            postags.insert(position, npostags[i])
+                            postags.insert(position, newpostag)
                         continue
 
                     # Lemmatisieren
@@ -79,12 +76,12 @@ class LangProcessor:
                 token = lemma.casefold()
 
                 # Indexliste aufbauen
-                indexlist.append((token, docid))
+                doc_index.append((token, docid))
 
-        return indexlist
+        return doc_index
 
     @staticmethod
-    def invert_index(index):
+    def invert_index(col_index):
         inv_ind = {}
 
         # index.sort()
@@ -101,16 +98,17 @@ class LangProcessor:
         #         docfreq = 1
         #         pl = [docid]
 
-        for token, docid in index:
+        for token, docid in col_index:
             if token in inv_ind:
-                docfreq, pl = inv_ind[token]
-                docfreq += 1
+                colfreq, pl = inv_ind[token]
+                colfreq += 1
                 pl.add(docid)
-                inv_ind[token] = (docfreq, pl)
+                inv_ind[token] = (colfreq, pl)
             else:
                 inv_ind[token] = (1, {docid})
 
         return inv_ind
+
 
     def get_inverse_index(self, docs):
         indexlist = []
@@ -118,6 +116,8 @@ class LangProcessor:
         for doc_id in docs.keys():
             url, doc = docs[doc_id]
             indexlist += self.get_index(doc, doc_id)
+
+        #indexlist2 = [self.get_index(doc, doc_id) for doc_id, (url, doc) in zip(docs.keys(), docs.values())]
 
         inverse_index = self.invert_index(indexlist)
         return inverse_index

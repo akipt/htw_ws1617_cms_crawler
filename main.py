@@ -37,6 +37,7 @@ def main():
     docs['doc5'] = ('url-platzhalter', 'An- und Abreise. Theater-Spiel. hieb- und stichfest. An-\ngekommen. Spielspaß und -freude. Verweildauer, -länge und -kosten.')
 
     inv_ind = l.get_inverse_index(docs)
+    test = l.calculate_frequencies(inv_ind, len(docs))
     with open('pickle/invertierter_index.pickle', 'wb') as f:
         pickle.dump(inv_ind, f, protocol=2)
 

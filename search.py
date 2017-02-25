@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import sys, getopt
+from functools import reduce
 
 from langprocessor import LangProcessor
 import pickle
@@ -31,8 +32,7 @@ def main(argv):
     l.find_compound_nouns(query_tags, query_tokens)
 
     #for token, pos in query_tags:
-    for ind in range(0, len(query_tags)):
-        token, pos = query_tags[ind]
+    for ind, (token, pos) in enumerate(query_tags):
 
         if token in ['AND', 'OR', 'ANDNOT', 'NEAR', 'NOT']:
             mode = token;
@@ -49,11 +49,10 @@ def main(argv):
             corrwort = l.correct_typo(token)
             # wenn Korrektur mehr als 1 Wort ergibt: in Postag-Liste einfügen und einzeln verarbeiten
             if len(corrwort.split(' ')) > 1:
-                ntokens = corrwort.split(' ')
-                npostags = l.do_pos_tagging(ntokens)
-                for i in range(0, len(npostags)):
+                npostags = l.do_pos_tagging(corrwort.split(' '))
+                for i, newpostag in enumerate(npostags):
                     position = ind + i + 1
-                    query_tags.insert(position, npostags[i])
+                    query_tags.insert(position, newpostag)
                 continue
 
             # lemmatisieren und normalisieren
@@ -82,21 +81,25 @@ def main(argv):
         ergebnis = ergebnis.difference(subtr)
 
     else:
-        ergebnis = results[0]
+
 
         if mode == 'OR':
-            # for i in range(1, len(results)):
-            #     ergebnis = ergebnis.union(results[i])
-            #     #test = ergebnis | results[i]
+            # ergebnis = reduce(lambda s1, s2: s1 | s2, results)
             ergebnis = set(doc for docs in results for doc in docs)
+
         elif mode == 'AND':
-            for i in range(1, len(results)):
-                ergebnis = ergebnis.intersection(results[i])
-                #test = ergebnis & results[i]
+            ergebnis = reduce(lambda s1, s2: s1 & s2, results)
+            # ergebnis = results[0]
+            # for i in range(1, len(results)):
+            #     ergebnis = ergebnis.intersection(results[i])
+            #     #test = ergebnis & results[i]
+
         elif mode == 'ANDNOT':
-            for i in range(1, len(results)):
-                ergebnis = ergebnis.difference(results[i])
-                #test = ergebnis - results[i]
+            ergebnis = reduce(lambda s1, s2: s1 - s2, results)
+            # ergebnis = results[0]
+            # for i in range(1, len(results)):
+            #     ergebnis = ergebnis.difference(results[i])
+            #     #test = ergebnis - results[i]
 
 
     #print(ergebnis)
