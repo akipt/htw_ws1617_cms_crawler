@@ -39,13 +39,15 @@ def main():
     # docs['doc5'] = Document('url1','Dokument 6','An- und Abreise. Theater-Spiel. hieb- und stichfest. An-\ngekommen. Spielspaß und -freude. Verweildauer, -länge und -kosten.')
     docs['d1'] = Document('url1', 'Dokument 1', 'Informatik Bauing. HTW HWR Beuth TH Berlin Brandenburg')
     docs['d2'] = Document('url1', 'Dokument 2', 'Informatik Bauing. HTW HWR Beuth TH Berlin Brandenburg')
-    docs['d3'] = Document('url1', 'Dokument 3',
-                                       'Informatik Bauing. HTW HWR Beuth TH Berlin Brandenburg Informatik Bauing. HTW HWR Beuth TH Berlin Brandenburg')
+    docs['d3'] = Document('url1', 'Dokument 3', 'Informatik Bauing. HTW HWR Beuth TH Berlin Brandenburg Informatik Bauing. HTW HWR Beuth TH Berlin Brandenburg')
     docs['d4'] = Document('url1', 'Dokument 4', 'Informatik HTW Beuth TH Berlin Brandenburg')
-    docs['d5'] = Document('url1', 'Dokument 5',
-                                       'Informatik HTW HTW HTW HTW HWR HWR HWR HWR HWR Beuth Beuth Beuth TH TH TH TH TH TH Berlin Berlin Berlin Berlin Berlin Berlin Berlin Brandenburg Brandenburg Brandenburg Brandenburg Brandenburg Brandenburg Brandenburg Brandenburg')
-    docs['d6'] = Document('url1', 'Dokument 6',
-                                       'HWR HWR HWR HWR HWR Beuth Beuth Beuth Berlin Berlin Berlin Berlin Berlin Berlin Berlin')
+    docs['d5'] = Document('url1', 'Dokument 5', 'Informatik HTW HTW HTW HTW HWR HWR HWR HWR HWR Beuth Beuth Beuth TH TH TH TH TH TH Berlin Berlin Berlin Berlin Berlin Berlin Berlin Brandenburg Brandenburg Brandenburg Brandenburg Brandenburg Brandenburg Brandenburg Brandenburg')
+    docs['d6'] = Document('url1', 'Dokument 6', 'HWR HWR HWR HWR HWR Beuth Beuth Beuth Berlin Berlin Berlin Berlin Berlin Berlin Berlin')
+    # docs['doc1'] = Document('', '', 'Studium Informatik an einer FH in Berlin')
+    # docs['doc2'] = Document('', '', 'Die Fachhochschule in Brandenburg')
+    # docs['doc3'] = Document('', '', 'Studium an der HTW Berlin')
+    # docs['doc4'] = Document('', '', 'Studium Informatik in Brandenburg')
+    # docs['doc5'] = Document('', '', 'Studium an der FH Brandenburg')
 
 
     for docid in docs.keys():
@@ -65,23 +67,28 @@ def main():
 
     ### Test TF-IDF und Scoring ###
     docnum = len(docs)
+    print("\nTest TF-IDF: vgl. Folie 26 in 12a")
     for docid in docs.keys():
-        print("\nTop words in document {}".format(docid))
+        print("\tTop words in document {}".format(docid))
         doc_index = docs[docid].indexliste
         scores = {word: Indexer.get_tfidf(word, docid, docnum, inv_index) for word in set(doc_index)}
         sorted_words = sorted(scores.items(), key=lambda x: x[1], reverse=True)
         for word, score in sorted_words[:3]:
-            print("\tWord: {}, TF-IDF: {}".format(word, round(score, 5)))
+            print("\t\t{}: {}".format(word, round(score, 3)))
 
     query = "Informatik HTW Berlin"
+    #query = "Informatik HWR"           # Negativbeispiel
+   # query = "Studium Informatik in Berlin"
+
     print("\n\nSuche nach " + query)
     queryterms = l.get_index(query)
     ergebnis = []
     for docid in docs.keys():
         score = Indexer.get_score(queryterms, docid, docnum, inv_index)
-        ergebnis.append((docid, score))
+        if score > 0:
+            ergebnis.append((docid, score))
 
-    ergebnis = sorted(ergebnis, key=lambda el: el[1], reverse=True)   #TODO: erst nach score und dann nach DocID sortieren
+    ergebnis = sorted(ergebnis, key=lambda el: (-el[1], el[0]))   # nach score (absteigend) und dann docID (aufsteigend)
     for e in ergebnis:
         doc, score = e
         print(doc + "  (score {})".format(round(score,3)))
