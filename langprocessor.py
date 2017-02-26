@@ -2,11 +2,10 @@ import hunspell
 import re
 import nltk
 import pickle
-import math
 
 
 class LangProcessor:
-    #abbrevs = {}
+    # abbrevs = {}
     ausschlusstags = []
     spellchecker = None
     lemmata_mapping = {}
@@ -14,9 +13,10 @@ class LangProcessor:
     stopwords = []
 
     def __init__(self, abbrevfile='abbreviations.txt', stopwords_file='stoppwortliste.txt'):
-        #self.load_abbrevs(abbrevfile)
+        # self.load_abbrevs(abbrevfile)
 
-        self.ausschlusstags = ['$.', 'CARD', '$,', '$(', 'ITJ'] # see http://www.ims.uni-stuttgart.de/forschung/ressourcen/lexika/TagSets/stts-table.html
+        # see http://www.ims.uni-stuttgart.de/forschung/ressourcen/lexika/TagSets/stts-table.html
+        self.ausschlusstags = ['$.', 'CARD', '$,', '$(', 'ITJ']
 
         self.spellchecker = hunspell.HunSpell('/usr/share/hunspell/de_DE.dic',
                                               '/usr/share/hunspell/de_DE.aff')
@@ -26,7 +26,7 @@ class LangProcessor:
 
         self.load_stopwords(stopwords_file)
 
-    def get_index(self, text, docid):
+    def get_index(self, text):
         doc_index = []
 
         sents = self.split_sents(text)
@@ -76,96 +76,14 @@ class LangProcessor:
                 token = lemma.casefold()
 
                 # Indexliste aufbauen
-                doc_index.append((token, docid))
+                doc_index.append(token)
 
         return doc_index
 
-    @staticmethod
-    def invert_index(col_index):
-        inv_ind = {}
-
-        # index.sort()
-        #
-        # for token, docid in index:
-        #     if token == term:
-        #         docfreq += 1
-        #         pl.append(docid)
-        #     else:
-        #         if term != '':
-        #             #inv_ind[(term, docfreq)] = set(pl)
-        #             inv_ind[term] = (docfreq, set(pl))
-        #         term = token
-        #         docfreq = 1
-        #         pl = [docid]
-
-        for token, docid in col_index:
-            if token in inv_ind:
-                colfreq, pl = inv_ind[token]
-                colfreq += 1
-                pl.add(docid)
-                inv_ind[token] = (colfreq, pl)
-            else:
-                inv_ind[token] = (1, {docid})
-
-        return inv_ind
-
-
-    def calculate_frequencies(self, inv_index, docnum):
-        keyfigures = {}
-        for term in inv_index:
-            cf, pl = inv_index[term]    # cf [collection frequency] = total number of occurrences of a term in the collection
-            df = len(pl)                # df [document frequency] = number of documents in the collection that contain a term
-            idf = math.log10(docnum / df)
-            #tf =                        # tf [term frequency] = number of times a term appears in a document
-
-            keyfigures[term] = (cf, df, idf)
-
-        return keyfigures
-
-
-    def get_inverse_index(self, docs):
-        indexlist = []
-
-        for doc_id in docs.keys():
-            url, doc = docs[doc_id]
-            indexlist += self.get_index(doc, doc_id)
-
-        #indexlist2 = [self.get_index(doc, doc_id) for doc_id, (url, doc) in zip(docs.keys(), docs.values())]
-
-        inverse_index = self.invert_index(indexlist)
-        return inverse_index
-
     ##################################### Hilfsmethoden ##################################
 
-    def tf(self, word, doc_index):
-        # if text == '':
-        #     return False
-        # doc_index = self.get_index(text, 0)
-        wordcount = len(doc_index)
-        termcount = len([i for i,ind in doc_index if i == word])
-        return termcount / wordcount
 
-    def n_containing(self, word, docs):
-        inv_ind = self.get_inverse_index(docs)
-        #inv_ind = {'lang': (3, {'doc1', 'doc3'}), 'kleid': (3, {'doc1', 'doc3'})}
-        if word not in inv_ind:
-            return 0
-        df = len(inv_ind[word][1])
-        return df
-
-    def idf(self, word, docs):
-        docnum = len(docs)
-        df = (1 + self.n_containing(word, docs))
-        return math.log(docnum / df)
-
-    def tfidf(self, word, doc_index, docs):
-        #doc_index = self.get_index(text, 0)
-        tf = self.tf(word, doc_index)
-        idf = self.idf(word, docs)
-        return  tf * idf
-
-
-    #/def remove_abbrev(self, t):
+    # /def remove_abbrev(self, t):
     #    for abbrev in self.abbrevs:
     #        t = t.replace(abbrev, self.abbrevs[abbrev])
     #    return t
@@ -197,7 +115,6 @@ class LangProcessor:
 
         return text
 
-
     @staticmethod
     def split_sents(text):
 
@@ -206,12 +123,10 @@ class LangProcessor:
 
         return sents
 
-
     @staticmethod
     def split_tokens(text):
         tokens = nltk.word_tokenize(text)
         return tokens
-
 
     @staticmethod
     def do_pos_tagging(tokens):
@@ -221,7 +136,6 @@ class LangProcessor:
         # tag tokens
         postags = tagger.tag(tokens)
         return postags
-
 
     def find_compound_verbs(self, postags, words):
         grammar = r"""
@@ -261,7 +175,6 @@ class LangProcessor:
                         words.remove(appr)
                         postags.remove((appr, apprpos))
 
-
     @staticmethod
     def read_lemmata_from_tiger_corpus(tiger_corpus_file, valid_cols_n=15, col_words=1, col_lemmata=2):
         lemmata_mapping = {}
@@ -275,7 +188,6 @@ class LangProcessor:
                         lemmata_mapping[w] = lemma
 
         return lemmata_mapping
-
 
     def load_lemmata(self, loadnew=False):
         if loadnew:
@@ -294,7 +206,6 @@ class LangProcessor:
         else:
             with open('pickle/lemmata_mapping.pickle', 'rb') as f:
                 self.lemmata_mapping = pickle.load(f)
-
 
     def find_lemma(self, w):
         w_lemma = None
@@ -315,7 +226,6 @@ class LangProcessor:
             w_lemma = w
 
         return w_lemma
-
 
     def correct_typo(self, w):
         neu_w = w

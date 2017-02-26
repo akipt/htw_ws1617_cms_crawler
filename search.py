@@ -1,10 +1,9 @@
 #!/usr/bin/python3
 
-import sys, getopt
+import sys
 from functools import reduce
-
-from langprocessor import LangProcessor
 import pickle
+from langprocessor import LangProcessor
 
 
 def main(argv):
@@ -31,11 +30,11 @@ def main(argv):
     # Bindestrich-Substantive?
     l.find_compound_nouns(query_tags, query_tokens)
 
-    #for token, pos in query_tags:
+    # for token, pos in query_tags:
     for ind, (token, pos) in enumerate(query_tags):
 
         if token in ['AND', 'OR', 'ANDNOT', 'NEAR', 'NOT']:
-            mode = token;
+            mode = token
             continue
         elif pos in l.ausschlusstags:
             continue
@@ -69,10 +68,9 @@ def main(argv):
             docfreq, docs = inv_ind[token]
             results.append(docs)
 
-
+    ergebnis = {}
     if mode == '':
         mode = 'OR'
-
 
     if mode == 'NOT':
         # Set mit allen möglichen Dokumenten-ids
@@ -81,7 +79,6 @@ def main(argv):
         ergebnis = ergebnis.difference(subtr)
 
     else:
-
 
         if mode == 'OR':
             # ergebnis = reduce(lambda s1, s2: s1 | s2, results)
@@ -101,8 +98,7 @@ def main(argv):
             #     ergebnis = ergebnis.difference(results[i])
             #     #test = ergebnis - results[i]
 
-
-    #print(ergebnis)
+    # print(ergebnis)
     if len(ergebnis) > 0:
         print("Suchergebnisse: \n")
         for e in ergebnis:
@@ -116,6 +112,5 @@ def main(argv):
                 print(e)
 
 
-
 if __name__ == "__main__":
-   main(sys.argv[1:])
+    main(sys.argv[1:])
