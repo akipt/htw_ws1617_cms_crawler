@@ -1,116 +1,163 @@
 #!/usr/bin/python3
 
-import sys
-from functools import reduce
+import sys, getopt
 import pickle
+from shyard import ShYard
+from pythonds import Stack
+from functools import reduce
 from langprocessor import LangProcessor
+import math
 
+'''TODO:
+NEAR-Suche implementieren (inv_posindex)
+Ranking für Boolsches IR
+Aufruf vereinheitlichen (Options wieder raus, Logikanfragen erkennt man auch so)
+    3 Modi:
+        - Keywords (mehrere Suchbegriffe übergeben) -> Vektorraum-Retrieval
+        - Logik -> Boolsches Retrieval
+        - NEAR -> Boolsches Retrieval über PosIndex (Abstand 1)
+'''
+class Search3:
 
-def main(argv):
-    with open('pickle/invertierter_index.pickle', 'rb') as f:
-        inv_ind = pickle.load(f)
+    @staticmethod
+    def process(argv):
+        erg = []
 
-    l = LangProcessor()
-    search_term = argv[0]
-    print("Suche nach: " + search_term)
-    mode = ''
-    results = []
+        with open('pickle/invertierter_index.pickle', 'rb') as f:
+            inv_ind = pickle.load(f)
+        with open('pickle/invertierter_posindex.pickle', 'rb') as f:
+            inv_posind = pickle.load(f)
 
-    ###### NLP ######
+        optlist, args = getopt.getopt(argv,
+                                      'bpk:')  # TODO: Keyword-Suche separat abbilden oder gleichbedeutend zu Freitext?
 
-    # remove hyphens
-    search_term = l.remove_hyphens(search_term)
+        if len(optlist) == 0:
+            # Freie Suche oder Keyword Search
+            query = reduce(lambda x, y: x + ' ' + y, args)
+            query = query.replace('"', '')
+            query = query.replace("'", "")
 
-    # tokenize
-    query_tokens = search_term.split(' ')
-
-    # POS Tagging
-    query_tags = l.do_pos_tagging(query_tokens)
-
-    # Bindestrich-Substantive?
-    l.find_compound_nouns(query_tags, query_tokens)
-
-    # for token, pos in query_tags:
-    for ind, (token, pos) in enumerate(query_tags):
-
-        if token in ['AND', 'OR', 'ANDNOT', 'NEAR', 'NOT']:
-            mode = token
-            continue
-        elif pos in l.ausschlusstags:
-            continue
-        elif pos != 'NE':
-
-            # Stoppwörter entfernen
-            if token.casefold() in l.stopwords:
-                continue
-
-            # Tippfehler korigieren
-            corrwort = l.correct_typo(token)
-            # wenn Korrektur mehr als 1 Wort ergibt: in Postag-Liste einfügen und einzeln verarbeiten
-            if len(corrwort.split(' ')) > 1:
-                npostags = l.do_pos_tagging(corrwort.split(' '))
-                for i, newpostag in enumerate(npostags):
-                    position = ind + i + 1
-                    query_tags.insert(position, newpostag)
-                continue
-
-            # lemmatisieren und normalisieren
-            token = l.find_lemma(corrwort)
-
-        token = token.casefold()
-        #### Ende NLP ######
-
-        # ergebnisliste
-        if token not in inv_ind:
-            results.append({})
-            continue
+            erg = Search3.vector_search(query, inv_ind)
         else:
-            docfreq, docs = inv_ind[token]
-            results.append(docs)
+            query = args[0]
+            if optlist[0][0] == '-b':
+                # boolean logic expression
+                erg = Search3.boolean_search(query, inv_ind)
 
-    ergebnis = {}
-    if mode == '':
-        mode = 'OR'
+            elif optlist[0][0] == '-p':
+                # phrase                    # TODO: NEAR!
+                #erg = phrase_search(query, inv_posind)
+                pass
 
-    if mode == 'NOT':
-        # Set mit allen möglichen Dokumenten-ids
-        ergebnis = set(doc for d, docs in inv_ind.values() for doc in docs)
-        subtr = set(doc for docs in results for doc in docs)
-        ergebnis = ergebnis.difference(subtr)
+        return erg
 
-    else:
+    @staticmethod
+    def boolean_search(query, inv_ind):
+        l = LangProcessor()
+        query_postfix = ShYard.get_postfix(query).split()
 
-        if mode == 'OR':
-            # ergebnis = reduce(lambda s1, s2: s1 | s2, results)
-            ergebnis = set(doc for docs in results for doc in docs)
+        st = Stack()
+        for teilquery in query_postfix:
+            # print(teilquery)
+            if teilquery not in ['AND', 'OR', 'NOT']:
+                term = l.get_index(teilquery)[0]   # wieder herausgenommen: Autokorrektur zerstört Such-Terms
+                #term = teilquery
+                if term in inv_ind:
+                    docs = inv_ind[term][1]
+                else:
+                    docs = {}
+                st.push(set(docs.keys()))
+                # print(st)
+            else:
+                q2 = st.pop()
+                q1 = st.pop()
+                ergebnis = {}
+                if teilquery == 'AND':
+                    ergebnis = reduce(lambda s1, s2: s1 & s2, [q1, q2])
+                elif teilquery == 'OR':
+                    ergebnis = set(doc for docs in [q1, q2] for doc in docs)
+                elif teilquery == 'NOT':
+                    st.push(q1)  # zurücklegen
+                    q1 = set(doc for d, docs in inv_ind.values() for doc in docs)
+                    ergebnis = q1.difference(q2)
 
-        elif mode == 'AND':
-            ergebnis = reduce(lambda s1, s2: s1 & s2, results)
-            # ergebnis = results[0]
-            # for i in range(1, len(results)):
-            #     ergebnis = ergebnis.intersection(results[i])
-            #     #test = ergebnis & results[i]
+                st.push(ergebnis)
 
-        elif mode == 'ANDNOT':
-            ergebnis = reduce(lambda s1, s2: s1 - s2, results)
-            # ergebnis = results[0]
-            # for i in range(1, len(results)):
-            #     ergebnis = ergebnis.difference(results[i])
-            #     #test = ergebnis - results[i]
+        ergebnis = st.pop()
+        ergebnis = sorted(list(ergebnis))
+        return ergebnis
 
-    # print(ergebnis)
+    @staticmethod
+    def vector_search(query, inv_index):
+        l = LangProcessor()
+        docids = set(doc for d, docs in inv_index.values() for doc in docs)
+        queryterms = l.get_index(query)
+        ergebnis = []
+        for docid in docids:
+            score = Search3.get_score(queryterms, docid, len(docids), inv_index)
+            if score > 0:
+                ergebnis.append((docid, score))
+
+        ergebnis = sorted(ergebnis, key=lambda el: (-el[1], el[0]))
+
+        # nach score (absteigend) und dann docID (aufsteigend)
+        return ergebnis
+
+    @staticmethod
+    def phrase_search(query, inv_posindex):
+        l = LangProcessor()
+        docids = set(doc for d, docs in inv_posindex.values() for doc in docs)
+        queryterms = l.get_index(query)
+        ergebnis = []
+
+        for i, token in enumerate(queryterms):
+            if token not in inv_posindex:
+                return []
+            else:
+                docfreq, postingliste = inv_posindex[token]
+        pass
+
+    @staticmethod
+    def get_score(queryterms, doc_id, docnum, inv_index):
+        summe = 0
+        for word in queryterms:
+            tf_idf = Search3.get_tfidf(word, doc_id, docnum, inv_index)
+            summe += tf_idf
+
+        summe = sum(Search3.get_tfidf(word, doc_id, docnum, inv_index) for word in queryterms)
+
+        return summe
+
+    @staticmethod
+    def get_tfidf(word, doc_id, docnum, inv_index):
+        # tf-idf pro term und dokument (Zelle in Matrix)
+
+        # cf [collection frequency] = total number of occurrences of a term in the collection
+        # df [document frequency] = number of documents in the collection that contain a term
+        # idf [inverse document frequency] = Bedeutung des Terms in der Gesamtmenge der Dokumente
+        # tf-idf = importance of terms in a document based on how frequently they appear across multiple documents
+
+        if word not in inv_index:
+            return 0
+        pl = inv_index[word][1]
+        df = len(pl)
+        idf = math.log10(docnum / df)
+        if doc_id in pl:
+            tf = pl[doc_id]
+        else:
+            tf = 0
+        tf_idf = tf * idf
+        return tf_idf
+
+
+if __name__ == "__main__":
+    ergebnis = Search3.process(sys.argv[1:])
+
     if len(ergebnis) > 0:
-        print("Suchergebnisse: \n")
+        #print('Suchergebnisse für Ihre Suche nach "' + query + '":\n')
+        print('Suchergebnisse für Ihre Suche:\n')
         for e in ergebnis:
             print(e)
     else:
         print("Nichts gefunden.")
-        if len(results) > 1:
-            print('\nTreffer für einzelne Suchbegriffe:')
-            altergebnis = set(doc for docs in results for doc in docs)
-            for e in altergebnis:
-                print(e)
 
-
-if __name__ == "__main__":
-    main(sys.argv[1:])

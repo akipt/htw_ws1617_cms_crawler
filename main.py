@@ -5,6 +5,7 @@ from langprocessor import LangProcessor
 import pickle
 from document import Document
 from indexer import Indexer
+from search import Search3
 
 
 def main():
@@ -53,7 +54,6 @@ def main():
     for docid in docs.keys():
         doc = docs[docid]
         doc.indexliste = l.get_index(doc.text)
-        #doc.do_language_processing(l)
         doc.calc_term_frequencies()
 
     inv_index = Indexer.get_inverse_index(docs)
@@ -71,7 +71,7 @@ def main():
     for docid in docs.keys():
         print("\tTop words in document {}".format(docid))
         doc_index = docs[docid].indexliste
-        scores = {word: Indexer.get_tfidf(word, docid, docnum, inv_index) for word in set(doc_index)}
+        scores = {word: Search3.get_tfidf(word, docid, docnum, inv_index) for word in set(doc_index)}
         sorted_words = sorted(scores.items(), key=lambda x: x[1], reverse=True)
         for word, score in sorted_words[:3]:
             print("\t\t{}: {}".format(word, round(score, 3)))
@@ -81,12 +81,8 @@ def main():
    # query = "Studium Informatik in Berlin"
 
     print("\n\nSuche nach " + query)
-    queryterms = l.get_index(query)
-    ergebnis = []
-    for docid in docs.keys():
-        score = Indexer.get_score(queryterms, docid, docnum, inv_index)
-        if score > 0:
-            ergebnis.append((docid, score))
+
+    ergebnis = Search3.process(query.split())
 
     ergebnis = sorted(ergebnis, key=lambda el: (-el[1], el[0]))   # nach score (absteigend) und dann docID (aufsteigend)
     for e in ergebnis:

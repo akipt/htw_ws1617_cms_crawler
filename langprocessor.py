@@ -70,7 +70,8 @@ class LangProcessor:
                         continue
 
                     # Lemmatisieren
-                    lemma = self.find_lemma(corrwort)
+                    #lemma = self.find_lemma(corrwort)
+                    lemma = self.find_lemma(wort)
 
                 # Normalisieren (Kleinschreibung)
                 token = lemma.casefold()

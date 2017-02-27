@@ -1,3 +1,4 @@
+# coding: utf8
 import math
 
 
@@ -58,63 +59,3 @@ class Indexer:
 
         return inv_posindex
 
-    # @staticmethod
-    # def calculate_frequencies(doc_col, inv_index):  #TODO: überflüssig
-    #     keyfigures = {}
-    #     # cf [collection frequency] = total number of occurrences of a term in the collection
-    #     # df [document frequency] = number of documents in the collection that contain a term
-    #     # idf [inverse document frequency] =
-    #     # tf-idf = importance of terms in a document based on how frequently they appear across multiple documents
-    #     #
-    #
-    #     docnum = len(doc_col)
-    #     for term, (cf, pl) in zip(inv_index.keys(), inv_index.values()):
-    #         df = len(pl)
-    #         idf = math.log10(docnum / df)
-    #
-    #         # for doc in pl:
-    #         #     tf = self.collection[doc].norm_tf[term]
-    #         #     tf_idf = tf * idf
-    #         for doc_id in pl:
-    #             doc_col[doc_id].calc_weight(term, idf)
-    #
-    #         keyfigures[term] = (cf, df, idf)
-    #     return keyfigures
-
-    @staticmethod
-    def get_idf(word, docnum, inv_index):  # TODO: überflüssig?
-        # docnum = len(doc_col)
-        (cf, pl) = inv_index[word]
-        df = len(pl)
-        idf = math.log10(docnum / df)
-        return idf
-
-    @staticmethod
-    def get_score(queryterms, doc_id, docnum, inv_index):
-        summe = 0
-        for word in queryterms:
-            tf_idf = Indexer.get_tfidf(word, doc_id, docnum, inv_index)
-            summe += tf_idf
-
-        summe = sum(Indexer.get_tfidf(word, doc_id, docnum, inv_index) for word in queryterms)
-
-        return summe
-
-    @staticmethod
-    def get_tfidf(word, doc_id, docnum, inv_index):
-        # tf-idf pro term und dokument (Zelle in Matrix)
-
-        # cf [collection frequency] = total number of occurrences of a term in the collection
-        # df [document frequency] = number of documents in the collection that contain a term
-        # idf [inverse document frequency] =
-        # tf-idf = importance of terms in a document based on how frequently they appear across multiple documents
-
-        pl = inv_index[word][1]
-        df = len(pl)
-        idf = math.log10(docnum / df)
-        if doc_id in pl:
-            tf = pl[doc_id]
-        else:
-            tf = 0
-        tf_idf = tf * idf
-        return tf_idf
