@@ -1,5 +1,6 @@
 # coding: utf8
 
+import csv
 import datetime
 import os
 import time
@@ -52,7 +53,8 @@ class Crawler:
         self.base_url = urlunsplit((scheme, host, '', '', ''))      # root abs (http://test.org or http://sub.test.org)
                                                                     # host: test.org or sub.test.org
         # add domain(s) to whitelist
-        self.registered_domain = tldextract.extract(start_url).registered_domain  # domain (test.org) # TODO: do we need this?
+        tmp = tldextract.TLDExtract(cache_file=False)
+        self.registered_domain = tmp(start_url).registered_domain
         self.fill_whitelist(whitelisted_domains, host)
 
         # create folders
@@ -68,6 +70,8 @@ class Crawler:
 
     @property
     def do_crawling(self):
+        f = open(os.path.join(self.baseFolder, "log.txt"),'wt')
+        writer = csv.writer(f)
 
         while self.found_links:
             url = self.found_links.pop()  # e.g. http://test.org/index.php
@@ -157,11 +161,14 @@ class Crawler:
             page.fullURL = url
             page.fileName = self.get_and_save_file(url)
             self.visited_links.add(url)
+
+            writer.writerow((page.fullURL, page.fileName, self.get_time_stamp()))
             self.pageList.append(page)
 
             print('    Extracting Links...')
             self.extract_links(page.html, parsed_url)
 
+        f.close()
         return self.pageList
 
     def extract_links(self, html, parsed_url):
