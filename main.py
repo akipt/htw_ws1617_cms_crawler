@@ -1,6 +1,5 @@
 from crawler import Crawler
 from textextractor import TextExtractor
-from souppage import SoupPage
 from langprocessor import LangProcessor
 import pickle
 from document import Document
@@ -25,9 +24,7 @@ def main():
     soup_pages = []
 
     for page in page_list:
-        souppage = SoupPage()
-        souppage.title = TextExtractor.extract_title(page.html)
-        soup_pages.append(souppage)
+       TextExtractor.extract_title(page.html)
 
     l = LangProcessor()
 
