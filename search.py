@@ -28,7 +28,7 @@ class Search3:
         with open('pickle/invertierter_posindex.pickle', 'rb') as f:
             inv_posind = pickle.load(f)
 
-        optlist, args = getopt.getopt(argv, 'bpk:')  # TODO: Keyword-Suche separat abbilden oder gleichbedeutend zu Freitext?
+        optlist, args = getopt.getopt(argv, 'bpk:')
 
         if len(optlist) == 0:
             # Freie Suche oder Keyword Search
@@ -44,9 +44,8 @@ class Search3:
                 erg = Search3.boolean_search(query, inv_ind)
 
             elif optlist[0][0] == '-p':
-                # phrase                    # TODO: NEAR!
+                # phrase
                 erg = Search3.phrase_search(query, inv_posind)
-                pass
 
         return erg
 
@@ -133,8 +132,7 @@ class Search3:
 
         s1 = tempdict[queryterms[0]]
         s2 = tempdict[queryterms[1]]
-        ergebnis = list(map(Search3.filter_near, s1, s2))
-        ergebnis = list(filter(lambda x: x != None, ergebnis))
+        ergebnis = list(filter(lambda x: x != None, map(Search3.filter_near, s1, s2)))
 
         ergebnis = sorted(ergebnis)
         return ergebnis
