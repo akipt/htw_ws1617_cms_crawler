@@ -28,8 +28,7 @@ class Search3:
         with open('pickle/invertierter_posindex.pickle', 'rb') as f:
             inv_posind = pickle.load(f)
 
-        optlist, args = getopt.getopt(argv,
-                                      'bpk:')  # TODO: Keyword-Suche separat abbilden oder gleichbedeutend zu Freitext?
+        optlist, args = getopt.getopt(argv, 'bpk:')  # TODO: Keyword-Suche separat abbilden oder gleichbedeutend zu Freitext?
 
         if len(optlist) == 0:
             # Freie Suche oder Keyword Search
@@ -46,7 +45,7 @@ class Search3:
 
             elif optlist[0][0] == '-p':
                 # phrase                    # TODO: NEAR!
-                #erg = phrase_search(query, inv_posind)
+                erg = Search3.phrase_search(query, inv_posind)
                 pass
 
         return erg
@@ -99,23 +98,46 @@ class Search3:
                 ergebnis.append((docid, score))
 
         ergebnis = sorted(ergebnis, key=lambda el: (-el[1], el[0]))
-
         # nach score (absteigend) und dann docID (aufsteigend)
+
         return ergebnis
+
+    @staticmethod
+    def filter_near(s1, s2):
+        doc_id_1, positions_1 = s1
+        doc_id_2, positions_2 = s2
+        if doc_id_1 == doc_id_2:
+
+            for p in positions_1:
+                if (p + 1) in positions_2:
+                    return doc_id_1
+
+
 
     @staticmethod
     def phrase_search(query, inv_posindex):
         l = LangProcessor()
         docids = set(doc for d, docs in inv_posindex.values() for doc in docs)
         queryterms = l.get_index(query)
-        ergebnis = []
+        tempdict = {}
 
-        for i, token in enumerate(queryterms):
-            if token not in inv_posindex:
-                return []
-            else:
-                docfreq, postingliste = inv_posindex[token]
-        pass
+        for word in queryterms:
+            if word in inv_posindex.keys():
+                df, pl = inv_posindex[word]
+                templiste = []
+                #for (doc_id, posliste) in zip(pl.keys(), pl.values()[1]):
+                for doc_id in pl:
+                    posliste = pl[doc_id][1]
+                    templiste.append((doc_id, posliste))
+                tempdict[word] = templiste
+
+        s1 = tempdict[queryterms[0]]
+        s2 = tempdict[queryterms[1]]
+        ergebnis = list(map(Search3.filter_near, s1, s2))
+        ergebnis = list(filter(lambda x: x != None, ergebnis))
+
+        ergebnis = sorted(ergebnis)
+        return ergebnis
 
     @staticmethod
     def get_score(queryterms, doc_id, docnum, inv_index):
