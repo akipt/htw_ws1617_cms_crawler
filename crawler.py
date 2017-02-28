@@ -52,7 +52,8 @@ class Crawler:
         self.base_url = urlunsplit((scheme, host, '', '', ''))      # root abs (http://test.org or http://sub.test.org)
                                                                     # host: test.org or sub.test.org
         # add domain(s) to whitelist
-        self.registered_domain = tldextract.extract(start_url).registered_domain  # domain (test.org) # TODO: do we need this?
+        tmp = tldextract.TLDExtract(cache_file=False)
+        self.registered_domain = tmp(start_url).registered_domain
         self.fill_whitelist(whitelisted_domains, host)
 
         # create folders
