@@ -78,17 +78,6 @@ def main():
         for word, score in sorted_words[:3]:
             print("\t\t{}: {}".format(word, round(score, 3)))
 
-    query = "Informatik HTW Berlin"
-    #query = "Informatik HWR"           # Negativbeispiel
-   # query = "Studium Informatik in Berlin"
-
-    print("\n\nSuche nach " + query)
-
-    ergebnis = Search3.process(query.split())
-
-    for e in ergebnis:
-        print('\t' + e)
-
 
 if __name__ == "__main__":
     main()
