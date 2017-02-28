@@ -1,5 +1,6 @@
 # coding: utf8
 
+import csv
 import datetime
 import os
 import time
@@ -69,6 +70,8 @@ class Crawler:
 
     @property
     def do_crawling(self):
+        f = open(os.path.join(self.baseFolder, "log.txt"),'wt')
+        writer = csv.writer(f)
 
         while self.found_links:
             url = self.found_links.pop()  # e.g. http://test.org/index.php
@@ -158,11 +161,14 @@ class Crawler:
             page.fullURL = url
             page.fileName = self.get_and_save_file(url)
             self.visited_links.add(url)
+
+            writer.writerow((page.fullURL, page.fileName, self.get_time_stamp()))
             self.pageList.append(page)
 
             print('    Extracting Links...')
             self.extract_links(page.html, parsed_url)
 
+        f.close()
         return self.pageList
 
     def extract_links(self, html, parsed_url):

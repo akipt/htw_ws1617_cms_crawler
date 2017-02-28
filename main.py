@@ -9,8 +9,8 @@ from indexer import Indexer
 
 def main():
     my_crawler = Crawler("http://www.datenlabor-berlin.de", ["datenlabor.berlin", "datenlabor-berlin.de"])
-    # page_list = my_crawler.do_crawling
-    page_list = []
+    page_list = my_crawler.do_crawling
+    #page_list = []
 
     # DEBUG
     print("\nSuccessfully parsed: " + my_crawler.start_url + " (found %d files)" % len(my_crawler.pageList))
