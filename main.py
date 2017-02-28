@@ -40,7 +40,7 @@ def main():
     docs['doc4'] = Document('url1','Dokument 5',"Es fand ein Spurwechsel statt. Es fand ein Spur-Wechsel statt. Es fand ein Spur Wechsel statt. Das Mittag's Menü kostet nur 3€. Das Mittagsmenü ist billig. Das Mittags-Menü ist billig. Das MittagsMenü ist billig. Die Schiff Fahrts Gesellschaft ist pleite.")
     docs['doc5'] = Document('url1','Dokument 6','An- und Abreise. Theater-Spiel. hieb- und stichfest. An-\ngekommen. Spielspaß und -freude. Verweildauer, -länge und -kosten.')'''
 
-    docs['d1'] = Document('url1', 'Dokument 1', 'Informatik Bauing. HTW HWR Beuth TH Berlin Brandenburg')
+    docs['d1'] = Document('url1', 'Dokument 1', 'Bauing. Informatik HTW HWR Beuth TH Berlin Brandenburg')
     docs['d2'] = Document('url1', 'Dokument 2', 'Informatik Bauing. HTW HWR Beuth TH Berlin Brandenburg')
     docs['d3'] = Document('url1', 'Dokument 3', 'Informatik Bauing. HTW HWR Beuth TH Berlin Brandenburg Informatik Bauing. HTW HWR Beuth TH Berlin Brandenburg')
     docs['d4'] = Document('url1', 'Dokument 4', 'Informatik HTW Beuth TH Berlin Brandenburg')
@@ -86,10 +86,8 @@ def main():
 
     ergebnis = Search3.process(query.split())
 
-    ergebnis = sorted(ergebnis, key=lambda el: (-el[1], el[0]))   # nach score (absteigend) und dann docID (aufsteigend)
     for e in ergebnis:
-        doc, score = e
-        print(doc + "  (score {})".format(round(score,3)))
+        print('\t' + e)
 
 
 if __name__ == "__main__":

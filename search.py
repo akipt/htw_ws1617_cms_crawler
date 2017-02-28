@@ -97,6 +97,7 @@ class Search3:
                 ergebnis.append((docid, score))
 
         ergebnis = sorted(ergebnis, key=lambda el: (-el[1], el[0]))
+        ergebnis = list(map(lambda x: x[0], ergebnis))
         # nach score (absteigend) und dann docID (aufsteigend)
 
         return ergebnis
@@ -124,7 +125,6 @@ class Search3:
             if word in inv_posindex.keys():
                 df, pl = inv_posindex[word]
                 templiste = []
-                #for (doc_id, posliste) in zip(pl.keys(), pl.values()[1]):
                 for doc_id in pl:
                     posliste = pl[doc_id][1]
                     templiste.append((doc_id, posliste))
@@ -132,7 +132,7 @@ class Search3:
 
         s1 = tempdict[queryterms[0]]
         s2 = tempdict[queryterms[1]]
-        ergebnis = list(filter(lambda x: x != None, map(Search3.filter_near, s1, s2)))
+        ergebnis = list(filter(lambda x: x != None, map(Search3.filter_near, s1, s2)))  # TODO: was passiert bei mehr als 3 Begriffen???
 
         ergebnis = sorted(ergebnis)
         return ergebnis
