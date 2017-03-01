@@ -24,7 +24,7 @@ def main():
     docs = {}
 
     for page in page_list:
-       docs[page.fullURL] = Document(page.title, souper.get_souped_text(page.html))
+       docs[page.fullURL] = Document(souper.get_souped_title(page.html), souper.get_souped_text(page.html))
 
     #with open('pickle/docs.pickle', 'wb') as d:
     #   pickle.dump(docs, d, protocol=2)
