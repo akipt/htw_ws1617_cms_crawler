@@ -3,7 +3,6 @@ from langprocessor import LangProcessor
 
 
 class Document:
-    url = ''
     title = ''
     text = ''
     indexliste = []
@@ -11,8 +10,7 @@ class Document:
     norm_tf = {}
     tf_idf = {}
 
-    def __init__(self, url='', title='', text=''):
-        self.url = url
+    def __init__(self, title='', text=''):
         self.title = title
         self.text = text
 
