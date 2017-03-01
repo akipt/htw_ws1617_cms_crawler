@@ -27,3 +27,8 @@ vgl.;vergleiche
 z.B.;zum Beispiel
 z.T.;zum Teil
 z.Zt.;zur Zeit
+lt.;laut
+ca.;circa
+rd.;rund
+i.E.; 
+&;und

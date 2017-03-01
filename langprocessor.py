@@ -5,7 +5,7 @@ import pickle
 
 
 class LangProcessor:
-    # abbrevs = {}
+    abbrevs = {}
     ausschlusstags = []
     spellchecker = None
     lemmata_mapping = {}
@@ -13,7 +13,7 @@ class LangProcessor:
     stopwords = []
 
     def __init__(self, abbrevfile='abbreviations.txt', stopwords_file='stoppwortliste.txt'):
-        # self.load_abbrevs(abbrevfile)
+        self.load_abbrevs(abbrevfile)
 
         # see http://www.ims.uni-stuttgart.de/forschung/ressourcen/lexika/TagSets/stts-table.html
         self.ausschlusstags = ['$.', 'CARD', '$,', '$(', 'ITJ']
@@ -28,6 +28,8 @@ class LangProcessor:
 
     def get_index(self, text):
         doc_index = []
+
+        text = self.remove_abbrev(text)
 
         sents = self.split_sents(text)
 
@@ -48,6 +50,7 @@ class LangProcessor:
                 # Satzzeichen und Zahlen entfernen
                 if pos in self.ausschlusstags or len(wort) == 1:
                     continue
+                wort = wort.replace('..', '')
 
                 # Namen werden nicht geprüft
                 if pos == 'NE':
@@ -84,35 +87,47 @@ class LangProcessor:
     ##################################### Hilfsmethoden ##################################
 
 
-    # /def remove_abbrev(self, t):
-    #    for abbrev in self.abbrevs:
-    #        t = t.replace(abbrev, self.abbrevs[abbrev])
-    #    return t
+    def remove_abbrev(self, t):
+       for abbrev in self.abbrevs:
+           t = t.replace(abbrev, self.abbrevs[abbrev])
+       return t
 
-    # def load_abbrevs(self, abbrev_file):
-    #     try:
-    #         with open(abbrev_file) as f:
-    #             for line in f:
-    #                 parts = line.split(';')
-    #                 if len(parts) == 2:
-    #                     a, w = parts[0], parts[1]
-    #                     self.abbrevs[a] = w.strip()
-    #     except FileNotFoundError:
-    #         print("No Abbreviations found.")
+    def load_abbrevs(self, abbrev_file):
+        try:
+            with open(abbrev_file) as f:
+                for line in f:
+                    parts = line.split(';')
+                    if len(parts) == 2:
+                        a, w = parts[0], parts[1]
+                        self.abbrevs[a] = w.strip()
+        except FileNotFoundError:
+            print("No Abbreviations found.")
 
 
     @staticmethod
     def remove_hyphens(t):
+        # Entferne doppelte Bindestriche
+        text = t.replace('­­', '-')
 
         # Entferne unvollständige Kompositionsteile (inkl. 'und')
-        text = re.sub(r"\w+-([.,]|\sund\s)", '', t)  # vorn (An- und Abreise)
-        text = re.sub(r"(\sund\s|,\s)-\w+", '', text)  # hinten (Spielspaß und -freude)
+        text = re.sub(r"\w+[-–]([.,]|\sund\s)", '', text)  # vorn (An- und Abreise)
+        text = re.sub(r"(\sund\s|,\s)[-–]\w+", '', text)  # hinten (Spielspaß und -freude)
 
         # Entferne Bindestriche in hart codierten Worttrennungen
-        text = re.sub(r"-[\n\r]+", '', text)
+        text = re.sub(r"[-–][\n\r]+", '', text)
+        text = re.sub(r"[-–]\s[\n\r]+", '', text)
 
-        # übrig bleiben Bindestriche im Wort und Gedankenstriche -> durch Leerzeichen ersetzen
-        text = text.replace('-', ' ')
+        # übrig bleiben Gedankenstriche -> durch Leerzeichen ersetzen
+        text = text.replace(' – ', ' ')
+        text = text.replace(' - ', ' ')
+
+        # Bindestriche im Wort entfernen
+        text = text.replace('­', '')
+        text = text.replace('-', '')    # TODO: replace entfernt immer nur das erste Auftreten?
+        text = text.replace('–', '')
+        text = text.replace('\xad', '')
+
+
 
         return text
 
@@ -126,7 +141,13 @@ class LangProcessor:
 
     @staticmethod
     def split_tokens(text):
-        tokens = nltk.word_tokenize(text)
+        #t = text.replace('"', '')
+        #t = t.replace('“', '')
+        #t = t.replace('”', '')
+        #t = t.replace('„', '')
+        t = re.sub(r"[\"“”„]", '', text)
+        tokens = nltk.word_tokenize(t)
+
         return tokens
 
     @staticmethod
@@ -232,6 +253,7 @@ class LangProcessor:
         neu_w = w
 
         if self.spellchecker:
+            print(w)
             corrspell = self.spellchecker.spell(w)
 
             if not corrspell:

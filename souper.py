@@ -8,7 +8,7 @@ def get_souped_text(html):
     soup = BeautifulSoup(html, 'html.parser')
 
     # Inhalt des HTML-Titletags (head title)
-    final_text += TextExtractor.extract_title(html) + ". "
+    # final_text += TextExtractor.extract_title(html) + ". "
 
     # header1 (body header h1 class="csc-firstHeader")
     # kann mehrfach auftreten (z.B. unter Publikationen - Vorabdrucke)
@@ -29,3 +29,13 @@ def get_souped_text(html):
             final_text += tag.text + ". "
 
     return final_text
+
+
+def get_souped_title(html):
+    final_title = ''
+
+    # Inhalt des HTML-Titletags (head title)
+    final_title += TextExtractor.extract_title(html)
+
+    return final_title
+
