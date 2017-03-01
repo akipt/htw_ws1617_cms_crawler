@@ -38,4 +38,3 @@ def get_souped_title(html):
     final_title += TextExtractor.extract_title(html)
 
     return final_title
-

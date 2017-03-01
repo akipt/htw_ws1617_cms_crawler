@@ -42,9 +42,13 @@ def main():
     inv_index = Indexer.get_inverse_index(docs)
     inv_posindex = Indexer.get_inverse_posindex(docs)
 
-    #import json
-    #json.dumps(['foo', {'bar': ('baz', None, 1.0, 2)}])
-    #'["foo", {"bar": ["baz", null, 1.0, 2]}]'
+    # Todo: Export des inv. Positionsindexes als CSV
+    # import json
+    # json.dumps(['foo', {'bar': ('baz', None, 1.0, 2)}])
+    # '["foo", {"bar": ["baz", null, 1.0, 2]}]'
+
+    # Todo: Hier erfolgt der Aufruf von TokenList und der Export der CSV-Datei
+
 
 
     with open('pickle/invertierter_index.pickle', 'wb') as f:
