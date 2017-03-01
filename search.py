@@ -9,7 +9,6 @@ from langprocessor import LangProcessor
 import math
 
 '''TODO:
-NEAR-Suche implementieren (inv_posindex)
 Ranking für Boolsches IR
 Aufruf vereinheitlichen (Options wieder raus, Logikanfragen erkennt man auch so)
     3 Modi:
@@ -103,27 +102,27 @@ class Search3:
         return vec_ergebnis
 
     @staticmethod
-    def filter_near(s1, s2):
-        erg = {}
-        for doc_id in s1:
-            if doc_id in s2:
-                pos1 = s1[doc_id]
-                pos2 = s2[doc_id]
-
-                newpositions = []
-                for pos in pos1:
-                    if (pos + 1) in pos2:
-                        newpositions.append(pos+1)
-                if len(newpositions) > 0:
-                    erg[doc_id] = set(newpositions)
-
-        return erg
-
-    @staticmethod
     def phrase_search(query, inv_posindex):
         l = LangProcessor()
         queryterms = l.get_index(query)
         templiste = []
+
+        def filter_near(s1, s2):
+            erg = {}
+            for docid in s1:
+                if docid in s2:
+                    pos1 = s1[docid]
+                    pos2 = s2[docid]
+
+                    newpositions = []
+                    for pos in pos1:
+                        if (pos + 1) in pos2:
+                            newpositions.append(pos + 1)
+                    if len(newpositions) > 0:
+                        erg[docid] = set(newpositions)
+
+            return erg
+
         relevant_doc_ids = reduce(lambda x,y: x & y, [set(inv_posindex[k][1].keys()) for k in queryterms])
 
         for word in queryterms:
@@ -137,7 +136,7 @@ class Search3:
                 templiste.append(doc_pos_mapping)
         #templiste = [{'d1': {5, 13}, 'd5': {1, 27}}, {'d1': {14}, 'd5': {5, 28}}, {'d1': {33}, 'd5': {3, 7, 29, 44}}]
 
-        phrase_ergebnis = (list(reduce(Search3.filter_near, templiste)))
+        phrase_ergebnis = (list(reduce(filter_near, templiste)))
 
         phrase_ergebnis = sorted(phrase_ergebnis)
         return phrase_ergebnis
