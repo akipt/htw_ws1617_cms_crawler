@@ -1,11 +1,11 @@
 from crawler import Crawler
 from textextractor import TextExtractor
-from souppage import SoupPage
 from langprocessor import LangProcessor
 import pickle
 from document import Document
 from indexer import Indexer
 from search import Search3
+import souper
 
 
 def main():
@@ -22,16 +22,13 @@ def main():
             print(x.get_full_url())
     # END_OF_DEBUG
 
-    soup_pages = []
+    docs = {}
 
     for page in page_list:
-        souppage = SoupPage()
-        souppage.title = TextExtractor.extract_title(page.html)
-        soup_pages.append(souppage)
+       docs[page.fullURL]=souper.get_souped_text(page.html)
 
     l = LangProcessor()
 
-    docs = {}
 
     ''' docs['doc0'] = Document('url1','Dokument 1','Wir führen ein Märchen-Theater auf. Sie zog ein neues Kleid an. Sie hatte ein Kleid an. Wir fangen an. Er hörte auf. Wir rufen die Männer an. Ich hole Papa ab. Ich hole ihn ab. Ich fange damit an. Ich kläre Dich auf. Ich höre Dir zu. Wir packen sieben Äpfel ein. Sie gehen schonmal vor. Die Uhr geht vor. Man hört die Kinder im Bett reden. Sie reden in dem Bett.')
     docs['doc1'] = Document('url1','Dokument 2','Einige recht berühmte Schriftsteller wohnten im kleinen Haus an der alten Brücke, z.B. Dante. Rapunzel ließ ihr langes, goldenes Haar herunter. Die Lesung des Märchens Rapunzel dauerte sehr lange. Der Eintritt kostete 5,30€.')
@@ -40,12 +37,12 @@ def main():
     docs['doc4'] = Document('url1','Dokument 5',"Es fand ein Spurwechsel statt. Es fand ein Spur-Wechsel statt. Es fand ein Spur Wechsel statt. Das Mittag's Menü kostet nur 3€. Das Mittagsmenü ist billig. Das Mittags-Menü ist billig. Das MittagsMenü ist billig. Die Schiff Fahrts Gesellschaft ist pleite.")
     docs['doc5'] = Document('url1','Dokument 6','An- und Abreise. Theater-Spiel. hieb- und stichfest. An-\ngekommen. Spielspaß und -freude. Verweildauer, -länge und -kosten.')'''
 
-    docs['d1'] = Document('url1', 'Dokument 1', 'Bauing. Informatik HTW HWR Beuth TH Berlin Brandenburg')
+    '''docs['d1'] = Document('url1', 'Dokument 1', 'Bauing. Informatik HTW HWR Beuth TH Berlin Brandenburg')
     docs['d2'] = Document('url1', 'Dokument 2', 'Informatik Bauing. HTW HWR Beuth TH Berlin Brandenburg')
     docs['d3'] = Document('url1', 'Dokument 3', 'Informatik Bauing. HTW HWR Beuth TH Berlin Brandenburg Informatik Bauing. HTW HWR Beuth TH Berlin Brandenburg')
     docs['d4'] = Document('url1', 'Dokument 4', 'Informatik HTW Beuth TH Berlin Brandenburg')
     docs['d5'] = Document('url1', 'Dokument 5', 'Informatik HTW HTW HTW HTW HWR HWR HWR HWR HWR Beuth Beuth Beuth TH TH TH TH TH TH Berlin Berlin Berlin Berlin Berlin Berlin Berlin Brandenburg Brandenburg Brandenburg Brandenburg Brandenburg Brandenburg Brandenburg Brandenburg')
-    docs['d6'] = Document('url1', 'Dokument 6', 'HWR HWR HWR HWR HWR Beuth Beuth Beuth Berlin Berlin Berlin Berlin Berlin Berlin Berlin')
+    docs['d6'] = Document('url1', 'Dokument 6', 'HWR HWR HWR HWR HWR Beuth Beuth Beuth Berlin Berlin Berlin Berlin Berlin Berlin Berlin')'''
     # docs['doc1'] = Document('', '', 'Studium Informatik an einer FH in Berlin')
     # docs['doc2'] = Document('', '', 'Die Fachhochschule in Brandenburg')
     # docs['doc3'] = Document('', '', 'Studium an der HTW Berlin')
