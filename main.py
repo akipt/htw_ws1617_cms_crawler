@@ -58,6 +58,10 @@ def main():
     inv_index = Indexer.get_inverse_index(docs)
     inv_posindex = Indexer.get_inverse_posindex(docs)
 
+    #import json
+    #json.dumps(['foo', {'bar': ('baz', None, 1.0, 2)}])
+    #'["foo", {"bar": ["baz", null, 1.0, 2]}]'
+
 
     with open('pickle/invertierter_index.pickle', 'wb') as f:
         pickle.dump(inv_index, f, protocol=2)

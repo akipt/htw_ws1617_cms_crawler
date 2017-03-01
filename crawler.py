@@ -3,6 +3,7 @@
 import csv
 import datetime
 import os
+import sys
 import time
 import urllib.robotparser
 from tempfile import mkdtemp, mkstemp
@@ -58,7 +59,12 @@ class Crawler:
         self.fill_whitelist(whitelisted_domains, host)
 
         # create folders
-        self.baseFolder = mkdtemp(self.get_time_stamp_wob(), 'crawler')
+
+        # old-Version was to create a name randomized temporary folder
+        # self.baseFolder = mkdtemp(self.get_time_stamp_wob(), 'crawler')
+        # now the output directory equals the script directory plus "out"
+        self.baseFolder = os.path.realpath(os.path.dirname(sys.argv[0])) + os.sep + "out"
+        print (self.baseFolder)
         self.create_base_folder(self.baseFolder)
 
         # load robots.txt file
