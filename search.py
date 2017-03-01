@@ -69,73 +69,78 @@ class Search3:
             else:
                 q2 = st.pop()
                 q1 = st.pop()
-                ergebnis = {}
+                bool_ergebnis = {}
                 if teilquery == 'AND':
-                    ergebnis = reduce(lambda s1, s2: s1 & s2, [q1, q2])
+                    bool_ergebnis = reduce(lambda s1, s2: s1 & s2, [q1, q2])
                 elif teilquery == 'OR':
-                    ergebnis = set(doc for docs in [q1, q2] for doc in docs)
+                    bool_ergebnis = set(doc for docs in [q1, q2] for doc in docs)
                 elif teilquery == 'NOT':
                     st.push(q1)  # zurücklegen
                     q1 = set(doc for d, docs in inv_ind.values() for doc in docs)
-                    ergebnis = q1.difference(q2)
+                    bool_ergebnis = q1.difference(q2)
 
-                st.push(ergebnis)
+                st.push(bool_ergebnis)
 
-        ergebnis = st.pop()
-        ergebnis = sorted(list(ergebnis))
-        return ergebnis
+        bool_ergebnis = st.pop()
+        bool_ergebnis = sorted(list(bool_ergebnis))
+        return bool_ergebnis
 
     @staticmethod
     def vector_search(query, inv_index):
         l = LangProcessor()
         docids = set(doc for d, docs in inv_index.values() for doc in docs)
         queryterms = l.get_index(query)
-        ergebnis = []
+        vec_ergebnis = []
         for docid in docids:
             score = Search3.get_score(queryterms, docid, len(docids), inv_index)
             if score > 0:
-                ergebnis.append((docid, score))
+                vec_ergebnis.append((docid, score))
 
-        ergebnis = sorted(ergebnis, key=lambda el: (-el[1], el[0]))
-        ergebnis = list(map(lambda x: x[0], ergebnis))
+        vec_ergebnis = sorted(vec_ergebnis, key=lambda el: (-el[1], el[0]))
+        vec_ergebnis = list(map(lambda x: x[0], vec_ergebnis))
         # nach score (absteigend) und dann docID (aufsteigend)
 
-        return ergebnis
+        return vec_ergebnis
 
     @staticmethod
     def filter_near(s1, s2):
-        doc_id_1, positions_1 = s1
-        doc_id_2, positions_2 = s2
-        if doc_id_1 == doc_id_2:
+        erg = {}
+        for doc_id in s1:
+            if doc_id in s2:
+                pos1 = s1[doc_id]
+                pos2 = s2[doc_id]
 
-            for p in positions_1:
-                if (p + 1) in positions_2:
-                    return doc_id_1
+                newpositions = []
+                for pos in pos1:
+                    if (pos + 1) in pos2:
+                        newpositions.append(pos+1)
+                if len(newpositions) > 0:
+                    erg[doc_id] = set(newpositions)
 
-
+        return erg
 
     @staticmethod
     def phrase_search(query, inv_posindex):
         l = LangProcessor()
-        docids = set(doc for d, docs in inv_posindex.values() for doc in docs)
         queryterms = l.get_index(query)
-        tempdict = {}
+        templiste = []
+        relevant_doc_ids = reduce(lambda x,y: x & y, [set(inv_posindex[k][1].keys()) for k in queryterms])
 
         for word in queryterms:
             if word in inv_posindex.keys():
                 df, pl = inv_posindex[word]
-                templiste = []
+                doc_pos_mapping = {}
                 for doc_id in pl:
-                    posliste = pl[doc_id][1]
-                    templiste.append((doc_id, posliste))
-                tempdict[word] = templiste
+                    if doc_id in relevant_doc_ids:
+                        posliste = set(pl[doc_id][1])
+                        doc_pos_mapping[doc_id] = posliste
+                templiste.append(doc_pos_mapping)
+        #templiste = [{'d1': {5, 13}, 'd5': {1, 27}}, {'d1': {14}, 'd5': {5, 28}}, {'d1': {33}, 'd5': {3, 7, 29, 44}}]
 
-        s1 = tempdict[queryterms[0]]
-        s2 = tempdict[queryterms[1]]
-        ergebnis = list(filter(lambda x: x != None, map(Search3.filter_near, s1, s2)))  # TODO: was passiert bei mehr als 3 Begriffen???
+        phrase_ergebnis = (list(reduce(Search3.filter_near, templiste)))
 
-        ergebnis = sorted(ergebnis)
-        return ergebnis
+        phrase_ergebnis = sorted(phrase_ergebnis)
+        return phrase_ergebnis
 
     @staticmethod
     def get_score(queryterms, doc_id, docnum, inv_index):
@@ -152,6 +157,7 @@ class Search3:
     def get_tfidf(word, doc_id, docnum, inv_index):
         # tf-idf pro term und dokument (Zelle in Matrix)
 
+        #tf [term frequency] = ? -> relativ, absolut und normiert
         # cf [collection frequency] = total number of occurrences of a term in the collection
         # df [document frequency] = number of documents in the collection that contain a term
         # idf [inverse document frequency] = Bedeutung des Terms in der Gesamtmenge der Dokumente
