@@ -16,6 +16,11 @@ class LangProcessor:
     stopwords = []
 
     def __init__(self, abbrevfile='helpers/abbreviations.txt', stopwords_file='helpers/stoppwortliste.txt'):
+        '''
+        Initialize Object: load all the needed resources
+        :param abbrevfile: default path to abbreviations file
+        :param stopwords_file: default path to stopwords file
+        '''
         self.abbrevs = loadhelper.load_abbrevs(abbrevfile)
 
         # see http://www.ims.uni-stuttgart.de/forschung/ressourcen/lexika/TagSets/stts-table.html
@@ -30,8 +35,15 @@ class LangProcessor:
         self.stopwords = loadhelper.load_stopwords(stopwords_file)
 
     def get_index(self, text, write_csv=True, csvfile='out/word_lemma_mapping.csv'):
+        '''
+        The main NLP method: process a document and construct the token index
+        :param text: a text
+        :param write_csv: True, if csv containing tokens and their lemmata should be written
+        :param csvfile: path to token-lemma-csv (only if write_csv is true)
+        :return: list of all the tokens of the text (sorted alphabetically) - may contain duplicates
+        '''
         doc_index = []
-        text = self.remove_abbrev(text)
+        text = self.remove_abbrev(text, self.abbrevs)
         if write_csv:
             fobj_out = open(csvfile, "a")
 
@@ -97,15 +109,26 @@ class LangProcessor:
 
     ##################################### Hilfsmethoden ##################################
 
-
-    def remove_abbrev(self, t):
-        for abbrev in self.abbrevs:
-            t = t.replace(' ' + abbrev.casefold() + ' ', ' ' + self.abbrevs[abbrev].casefold() + ' ')
+    @staticmethod
+    def remove_abbrev(t, abbrevs):
+        '''
+        Replace abbreviations in a text with their translations
+        :param t: the text (possibly with abbreviations)
+        :param abbrevs: dictionary of abbreviations {abbreviation:translation}
+        :return: text without abbreviations
+        '''
+        for abbrev in abbrevs:
+            t = t.replace(' ' + abbrev.casefold() + ' ', ' ' + abbrevs[abbrev].casefold() + ' ')
 
         return t
 
     @staticmethod
     def remove_hyphens(t):
+        '''
+        Remove all kinds of hyphens in a text
+        :param t: the text
+        :return: text without hyphens
+        '''
         # Testdatei: Startseite, Satz 7
 
         # Entferne doppelte Bindestriche
@@ -116,7 +139,7 @@ class LangProcessor:
         text = re.sub(r"(\sund\s|,\s)[-–­]\w+", '', text)  # hinten (Spielspaß und -freude)
 
         # Entferne Bindestriche in hart codierten Worttrennungen
-        text = re.sub(r"[-–­][\n\r]+", '', text)
+        text = re.sub(r"[-–­][\n\r]+", '', text)        # TODO: Wort mit aufnehmen (Gruppe)
         # text = re.sub(r"[-–]\s[\n\r]+", '', text)
         text = re.sub(r"[-–­]\s[\n\r]*", '', text)  # id 11: Begriffs- klassifikation, ersetzt auch Gedankenstriche
 
@@ -133,7 +156,12 @@ class LangProcessor:
 
     @staticmethod
     def split_sents(text, abbrevs):
-
+        '''
+        Split a text into sentences
+        :param text: full text
+        :param abbrevs: dictionary of abbreviations {abbreviation:translation}
+        :return: list of sentences
+        '''
         # sent_tokenizer = nltk.data.load('tokenizers/punkt/german.pickle')
         # sents = sent_tokenizer.tokenize(text)
 
@@ -147,6 +175,13 @@ class LangProcessor:
 
     @staticmethod
     def split_tokens(text):
+        '''
+        Split a text or sentence into Tokens and remove everything, that is no word
+        The Regex says the following: words should start with a letter and end with a letter. Hyphens, Dots and Slashes in between are allowed
+        :param text: full text or sentence (String)
+        :return: list of tokens
+
+        '''
         # tokens = nltk.word_tokenize(t)
 
         expr = r'''[A-Za-zÄÖÜäöü][a-zäöüß[A-ZÄÖÜa-zäöüß|-|–|/|\.|\'’]*[A-ZÄÖÜa-zäöüß]'''
@@ -157,6 +192,11 @@ class LangProcessor:
 
     @staticmethod
     def do_pos_tagging(tokens):
+        '''
+        Do Part-of-Speech Tagging. The TIGER corpus is used (tagset STTS)
+        :param tokens: list of tokens
+        :return: list of tuples [(token, postag)]
+        '''
         with open('helpers/nltk_german_classifier_data_tiger.pickle', 'rb') as f:
             tagger = pickle.load(f)
 
@@ -165,6 +205,12 @@ class LangProcessor:
         return postags
 
     def find_compound_verbs(self, postags, words):
+        '''
+        find verbs that consist of 2 parts
+        :param postags: list of postags
+        :param words: list of words
+        :return: words- and postag lists are changed
+        '''
         grammar = r"""
                 CV:
                     {<V.*><.*><PTKVZ>}  # korrekt getaggt
@@ -204,13 +250,20 @@ class LangProcessor:
 
 
     def find_lemma(self, w):
+        '''
+        Lemmatization of a token: tries to find a lemma by using different dictionaries
+        First: try to find token in dictionary built from TIGER and SMULTRON corpora
+        Second: try stemming method of hunspell (which uses, in fact, also a dictionary)
+        :param w: token (String)
+        :return: lemma (String)
+        '''
         w_lemma = None
 
         # 1st try: read lemma from mapping
         if self.lemmata_mapping:
             w_lemma = self.lemmata_mapping.get(w, None)
 
-        # 2nd try: Stemming
+        # 2nd try: Stemming... well, not really
         if not w_lemma:
             if self.spellchecker:
                 lemmata_hunspell = self.spellchecker.stem(w)
@@ -224,6 +277,11 @@ class LangProcessor:
         return w_lemma
 
     def correct_typo(self, w):
+        '''
+        Try to correct typos by using hunspell's spellchecker
+        :param w: token (string)
+        :return: corrected token (String) or original if no correction was found or if token is correct
+        '''
         neu_w = w
 
         if self.spellchecker:
@@ -237,6 +295,12 @@ class LangProcessor:
         return neu_w
 
     def find_compound_nouns(self, postags, tokens):
+        '''
+        Try to reassemble nouns, that are compounds (and were possibly separated during hyphen removal)
+        :param postags: list of POS tags
+        :param tokens: list of tokens
+        :return: list of POS tags (token list is in fact also changed)
+        '''
         zus = ''
         removelist = []
         grammar = r"""
