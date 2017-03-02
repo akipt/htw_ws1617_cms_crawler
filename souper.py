@@ -1,4 +1,3 @@
-from textextractor import TextExtractor
 from bs4 import BeautifulSoup
 import re
 
@@ -31,9 +30,11 @@ def get_souped_text(html):
 
 def get_souped_title(html):
     # Inhalt des HTML-Titletags (head title)
-    final_title = TextExtractor.extract_title(html)
+    soup = BeautifulSoup(html, 'lxml')
+    final_title = soup.title.text
 
     return final_title
+
 
 '''def get_encoding(html):
     soup = BeautifulSoup(html, 'html.parser')
