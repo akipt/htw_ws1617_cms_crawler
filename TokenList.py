@@ -16,6 +16,7 @@ class TokenList:
     def __init__(self, documents):
         self.documents = documents
         self.calc_term_frequencies_inverse_document_frequencies()
+        self.tf_idf = {}
 
     def collect_abs_tf(self):
         for document in documents:
@@ -37,9 +38,9 @@ class TokenList:
             self.idf[token] = log(len(self.documents) / documents_including_token)
 
     def calc_term_frequencies_inverse_document_frequencies(self):
-        if (self.abs_tf == None) or (self.norm_tf == None):
+        if (self.abs_tf is None) or (self.norm_tf is None):
             self.calc_term_frequencies()
-        if (self.idf == None):
+        if self.idf is None:
             self.calc_inverse_document_frequencies()
         for token in self.abs_tf.keys():
             self.tf_idf = self.norm_tf[token] * self.idf[token]

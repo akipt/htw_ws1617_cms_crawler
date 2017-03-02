@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-import re
+
 
 def get_souped_text(html):
     final_text = ''
@@ -26,7 +26,7 @@ def get_souped_text(html):
         if tag.text:
             final_text += tag.text + ". "
 
-    return (final_text)
+    return final_text
 
 def get_souped_title(html):
     # Inhalt des HTML-Titletags (head title)

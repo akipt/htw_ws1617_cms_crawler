@@ -2,22 +2,22 @@
 
 import csv
 import datetime
+import getopt
 import os
+import pickle
 import sys
 import time
 import urllib.robotparser
-from tempfile import mkdtemp, mkstemp
+from tempfile import mkstemp
 from urllib.error import URLError, HTTPError
 from urllib.parse import urlparse, urlsplit, urlunsplit
 from urllib.request import Request, urlopen, build_opener, urlretrieve
 import tldextract
 from bs4 import BeautifulSoup, SoupStrainer
-from noredirection import NoRedirection
-from pageclass import Page
-import sys, getopt
 import souper
 from document import Document
-import pickle
+from noredirection import NoRedirection
+from pageclass import Page
 
 '''ToDo:
 write log (adding timestamps)
@@ -53,8 +53,8 @@ class Crawler:
         # rebuild url (and discard fragment)
         start_url = urlunsplit((scheme, host, path, query, ''))
         print('Start Crawler with seed ' + start_url)
-        self.base_url = urlunsplit((scheme, host, '', '', ''))      # root abs (http://test.org or http://sub.test.org)
-                                                                    # host: test.org or sub.test.org
+        self.base_url = urlunsplit((scheme, host, '', '', ''))  # root abs (http://test.org or http://sub.test.org)
+        # host: test.org or sub.test.org
         # add domain(s) to whitelist
         tmp = tldextract.TLDExtract(cache_file=False)
         self.registered_domain = tmp(start_url).registered_domain
@@ -66,7 +66,7 @@ class Crawler:
         # self.baseFolder = mkdtemp(self.get_time_stamp_wob(), 'crawler')
         # now the output directory equals the script directory plus "out"
         self.baseFolder = os.path.realpath(os.path.dirname(sys.argv[0])) + os.sep + "out"
-        print (self.baseFolder)
+        print(self.baseFolder)
         self.create_base_folder(self.baseFolder)
 
         # load robots.txt file
@@ -78,7 +78,7 @@ class Crawler:
 
     @property
     def do_crawling(self):
-        f = open(os.path.join(self.baseFolder, "log.txt"),'wt')
+        f = open(os.path.join(self.baseFolder, "log.txt"), 'wt')
         writer = csv.writer(f)
 
         while self.found_links:
@@ -97,7 +97,8 @@ class Crawler:
 
             # ask robots.txt whether we are allowed to fetch url
             if parsed_url.hostname not in self.robotsfiles:
-                self.fetch_robotsfile(parsed_url.hostname, urlunsplit([parsed_url.scheme, parsed_url.hostname,'','','']))
+                self.fetch_robotsfile(parsed_url.hostname,
+                                      urlunsplit([parsed_url.scheme, parsed_url.hostname, '', '', '']))
             if not self.robotsfiles[parsed_url.hostname].can_fetch(self.AGENT_NAME, parsed_url.path):
                 print('Not allowed to fetch %s' % parsed_url.path)
                 return
@@ -272,15 +273,15 @@ class Crawler:
 
         # and duplicate each (domains with and w/o www should be present)
         templist = []
-        for d in whitelisted_domains:
-            subdomain, domain, suffix = tldextract.extract(d)
+        for dom in whitelisted_domains:
+            subdomain, domain, suffix = tldextract.extract(dom)
             if suffix == '':
                 # IP-adresses don't need www -> TODO: are there other domain without tld????
                 continue
             if subdomain == '':
                 subdomain = 'www'
             else:
-                sdlist = tldextract.extract(d).subdomain.split('.')
+                sdlist = tldextract.extract(dom).subdomain.split('.')
                 if sdlist[0] == 'www':
                     sdlist.remove('www')
                 else:  # domains with subdomains get www prefix -> TODO: is this correct? e.g. www.admin.test.org
@@ -326,18 +327,20 @@ class Crawler:
 
         return
 
+
 if __name__ == "__main__":
     argv = sys.argv[1:]
     optlist, args = getopt.getopt(argv, 's:w:')
 
     whitelist = []
+    seed = ''
     if len(optlist) == 0:
         if len(args) == 0:
             seed = 'http://www.datenlabor-berlin.de'
             whitelist = ['datenlabor-berlin.de', 'datenlabor.berlin']
         else:
             seed = args[0]
-    for opt,arg in optlist:
+    for opt, arg in optlist:
         if opt == '-s':
             seed = arg
         elif opt == '-w':
@@ -356,8 +359,7 @@ if __name__ == "__main__":
     # END_OF_DEBUG
 
     docs = {}
-    for page in page_list:
-       docs[page.fullURL] = Document(souper.get_souped_title(page.html), souper.get_souped_text(page.html))
+    for pg in page_list:
+        docs[pg.fullURL] = Document(souper.get_souped_title(pg.html), souper.get_souped_text(pg.html))
     with open('helpers/docs.pickle', 'wb') as d:
-       pickle.dump(docs, d, protocol=2)
-
+        pickle.dump(docs, d, protocol=2)

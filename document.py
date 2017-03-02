@@ -1,12 +1,13 @@
 # coding: utf8
 from langprocessor import LangProcessor
 
+
 class Document:
     title = ''
     text = ''
     indexliste = []
-    abs_tf = {} #absolute term frequency
-    norm_tf = {} #augmented term frequency
+    abs_tf = {}  # absolute term frequency
+    norm_tf = {}  # augmented term frequency
 
     def __init__(self, title='', text=''):
         self.title = title

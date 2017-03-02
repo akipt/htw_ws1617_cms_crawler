@@ -1,8 +1,8 @@
 # SOURCE: https://rosettacode.org/wiki/Parsing/Shunting-yard_algorithm#Python
 
+import sys
 from collections import namedtuple
-from pprint import pprint as pp
-import sys, getopt
+
 
 class ShYard:
     OpInfo = namedtuple('OpInfo', 'prec assoc')
@@ -27,7 +27,7 @@ class ShYard:
 
     @staticmethod
     def get_input(inp=None):
-        'Inputs an expression and returns list of (TOKENTYPE, tokenvalue)'
+        """Inputs an expression and returns list of (TOKENTYPE, tokenvalue)"""
 
         if inp is None:
             inp = input('expression: ')

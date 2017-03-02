@@ -1,7 +1,6 @@
 # coding: utf8
-from langprocessor import LangProcessor
 import pickle
-from document import Document
+from langprocessor import LangProcessor
 
 
 class Indexer:
@@ -61,6 +60,7 @@ class Indexer:
 
         return inv_posindex
 
+
 if __name__ == "__main__":
     l = LangProcessor()
     with open('helpers/docs.pickle', 'rb') as d:
@@ -79,8 +79,8 @@ if __name__ == "__main__":
         print(docid)
         doc.indexliste = l.get_index(doc.text, write_lemmamapping, csvfile)
 
-    inv_index = Indexer.get_inverse_index(docs)
-    inv_posindex = Indexer.get_inverse_posindex(docs)
+    inv_ind = Indexer.get_inverse_index(docs)
+    inv_posind = Indexer.get_inverse_posindex(docs)
 
     # Todo: Export des inv. Positionsindexes als JSON
     # import json
@@ -90,6 +90,6 @@ if __name__ == "__main__":
     # Todo: Hier erfolgt der Aufruf von TokenList und der Export der CSV-Datei
 
     with open('helpers/invertierter_index.pickle', 'wb') as invf:
-        pickle.dump(inv_index, invf, protocol=2)
+        pickle.dump(inv_ind, invf, protocol=2)
     with open('helpers/invertierter_posindex.pickle', 'wb') as invpf:
-        pickle.dump(inv_posindex, invpf, protocol=2)
+        pickle.dump(inv_posind, invpf, protocol=2)

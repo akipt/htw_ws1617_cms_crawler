@@ -16,8 +16,9 @@ Aufruf vereinheitlichen (Options wieder raus, Logikanfragen erkennt man auch so)
         - Logik -> Boolsches Retrieval
         - NEAR -> Boolsches Retrieval über PosIndex (Abstand 1)
 '''
-class Search3:
 
+
+class Search3:
     @staticmethod
     def process(argv):
         erg = []
@@ -57,8 +58,8 @@ class Search3:
         for teilquery in query_postfix:
             # print(teilquery)
             if teilquery not in ['AND', 'OR', 'NOT']:
-                term = l.get_index(teilquery)[0]   # wieder herausgenommen: Autokorrektur zerstört Such-Terms
-                #term = teilquery
+                term = l.get_index(teilquery)[0]  # wieder herausgenommen: Autokorrektur zerstört Such-Terms
+                # term = teilquery
                 if term in inv_ind:
                     docs = inv_ind[term][1]
                 else:
@@ -123,10 +124,11 @@ class Search3:
 
             return erg
 
-        relevant_doc_ids = reduce(lambda x,y: x & y, [set(inv_posindex[k][1].keys()) for k in queryterms if k in inv_posindex])
+        relevant_doc_ids = reduce(lambda x, y: x & y,
+                                  [set(inv_posindex[k][1].keys()) for k in queryterms if k in inv_posindex])
 
         for word in queryterms:
-            if word not in inv_posindex.keys(): # es müssen alle Wörter der Phrase enthalten sein
+            if word not in inv_posindex.keys():  # es müssen alle Wörter der Phrase enthalten sein
                 return []
             else:
                 df, pl = inv_posindex[word]
@@ -136,7 +138,7 @@ class Search3:
                         posliste = set(pl[doc_id][1])
                         doc_pos_mapping[doc_id] = posliste
                 templiste.append(doc_pos_mapping)
-        #templiste = [{'d1': {5, 13}, 'd5': {1, 27}}, {'d1': {14}, 'd5': {5, 28}}, {'d1': {33}, 'd5': {3, 7, 29, 44}}]
+        # templiste = [{'d1': {5, 13}, 'd5': {1, 27}}, {'d1': {14}, 'd5': {5, 28}}, {'d1': {33}, 'd5': {3, 7, 29, 44}}]
 
         phrase_ergebnis = (list(reduce(filter_near, templiste)))
 
@@ -158,7 +160,7 @@ class Search3:
     def get_tfidf(word, doc_id, docnum, inv_index):
         # tf-idf pro term und dokument (Zelle in Matrix)
 
-        #tf [term frequency] = ? -> relativ, absolut und normiert
+        # tf [term frequency] = ? -> relativ, absolut und normiert
         # cf [collection frequency] = total number of occurrences of a term in the collection
         # df [document frequency] = number of documents in the collection that contain a term
         # idf [inverse document frequency] = Bedeutung des Terms in der Gesamtmenge der Dokumente
@@ -181,10 +183,9 @@ if __name__ == "__main__":
     ergebnis = Search3.process(sys.argv[1:])
 
     if len(ergebnis) > 0:
-        #print('Suchergebnisse für Ihre Suche nach "' + query + '":\n')
+        # print('Suchergebnisse für Ihre Suche nach "' + query + '":\n')
         print('Suchergebnisse für Ihre Suche:\n')
         for e in ergebnis:
             print(e)
     else:
         print("Nichts gefunden.")
-

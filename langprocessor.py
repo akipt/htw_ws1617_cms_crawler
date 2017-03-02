@@ -34,7 +34,7 @@ class LangProcessor:
         if write_csv:
             fobj_out = open(csvfile, "a")
 
-        #text = self.remove_dates(text)
+        # text = self.remove_dates(text)
 
         sents = self.split_sents(text, self.abbrevs)
 
@@ -80,7 +80,7 @@ class LangProcessor:
                         continue
 
                     # Lemmatisieren
-                    #lemma = self.find_lemma(corrwort)
+                    # lemma = self.find_lemma(corrwort)
                     lemma = self.find_lemma(wort)
 
                 # Normalisieren (Kleinschreibung)
@@ -99,10 +99,10 @@ class LangProcessor:
 
 
     def remove_abbrev(self, t):
-       for abbrev in self.abbrevs:
-           t = t.replace(' '+abbrev.casefold()+' ', ' '+self.abbrevs[abbrev].casefold()+' ')
-           #t = re.sub(r"""\s""")
-       return t
+        for abbrev in self.abbrevs:
+            t = t.replace(' ' + abbrev.casefold() + ' ', ' ' + self.abbrevs[abbrev].casefold() + ' ')
+            # t = re.sub(r"""\s""")
+        return t
 
     def load_abbrevs(self, abbrev_file):
         try:
@@ -115,14 +115,13 @@ class LangProcessor:
         except FileNotFoundError:
             print("No Abbreviations found.")
 
-
     @staticmethod
     def remove_hyphens(t):
         # Testdatei: Startseite, Satz 7
-        #text = t.strip(' \t\n\r')
+        # text = t.strip(' \t\n\r')
 
         # Entferne doppelte Bindestriche
-        #text = t.replace('­­', '-')
+        # text = t.replace('­­', '-')
         text = re.sub(r"[-–­]{2}", '-', t)
 
         # Entferne unvollständige Kompositionsteile (inkl. 'und')
@@ -131,36 +130,38 @@ class LangProcessor:
 
         # Entferne Bindestriche in hart codierten Worttrennungen
         text = re.sub(r"[-–­][\n\r]+", '', text)
-        #text = re.sub(r"[-–]\s[\n\r]+", '', text)
+        # text = re.sub(r"[-–]\s[\n\r]+", '', text)
         text = re.sub(r"[-–­]\s[\n\r]*", '', text)  # id 11: Begriffs- klassifikation, ersetzt auch Gedankenstriche
 
         # übrig bleiben Gedankenstriche -> durch Leerzeichen ersetzen
-        #text = re.sub(r"\s[-–]\s", ' ', text)
+        # text = re.sub(r"\s[-–]\s", ' ', text)
 
         # Bindestriche im Wort entfernen
-        #text = text.replace('\xad', '')
-        #text = text.replace('-', '')
-        #text = text.replace('–', '')
-        #text = text.replace('­','')
-        #text = re.sub(r"[-–­]", '', text)
-        text = re.sub(r"([A-ZÄÖÜ][a-zäöüß]*)[-–\xad]([A-ZÄÖÜ][a-zäöüß]*)", '\g<1> \g<2>', text) # zusammengesetzte Nomen
-        text = re.sub(r"(\w*)[-–\xad](\w*)", '\g<1>\g<2>', text)    # alle anderen Bindestriche in Worten
-
+        # text = text.replace('\xad', '')
+        # text = text.replace('-', '')
+        # text = text.replace('–', '')
+        # text = text.replace('­','')
+        # text = re.sub(r"[-–­]", '', text)
+        text = re.sub(r"([A-ZÄÖÜ][a-zäöüß]*)[-–\xad]([A-ZÄÖÜ][a-zäöüß]*)", '\g<1> \g<2>',
+                      text)  # zusammengesetzte Nomen
+        text = re.sub(r"(\w*)[-–\xad](\w*)", '\g<1>\g<2>', text)  # alle anderen Bindestriche in Worten
 
         return text
 
     @staticmethod
     def remove_dates(t):
-        text = re.sub(r"\d+.[\s]*(Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|\d\d.)\s*(\d{4})", '', t)
-        #for b in re.finditer(r"\d+.[\s]*(Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|\d\d.)\s*(\d{4})", t):
+        text = re.sub(
+            r"\d+.[\s]*(Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|\d\d.)\s*(\d{4})",
+            '', t)
+        # for b in re.finditer(r"\d+.[\s]*(Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|\d\d.)\s*(\d{4})", t):
         #    pass
         return text
 
     @staticmethod
     def split_sents(text, abbrevs):
 
-        #sent_tokenizer = nltk.data.load('tokenizers/punkt/german.pickle')
-        #sents = sent_tokenizer.tokenize(text)
+        # sent_tokenizer = nltk.data.load('tokenizers/punkt/german.pickle')
+        # sents = sent_tokenizer.tokenize(text)
 
         punkt_param = PunktParameters()
         abbreviation = list(abbrevs.keys())
@@ -172,9 +173,9 @@ class LangProcessor:
 
     @staticmethod
     def split_tokens(text):
-        #t = re.sub(r"[\"“”„]", '', text)
-        #tokens = nltk.word_tokenize(t)
-        #expr = r'''\w+|\$\w[\w|-|/|\.]*|\S+'''
+        # t = re.sub(r"[\"“”„]", '', text)
+        # tokens = nltk.word_tokenize(t)
+        # expr = r'''\w+|\$\w[\w|-|/|\.]*|\S+'''
         expr = r'''[A-Za-zÄÖÜäöü][a-zäöüß[A-ZÄÖÜa-zäöüß|-|–|/|\.|\'’]*[A-ZÄÖÜa-zäöüß]'''
         tokenizer = RegexpTokenizer(expr)
         tokens = tokenizer.tokenize(text)
@@ -251,7 +252,7 @@ class LangProcessor:
                 self.lemmata_mapping = {k: v for k, v in self.lemmata_mapping.items() if v != 'unknown'}
                 self.lemmata_mapping = {k: v for k, v in self.lemmata_mapping.items() if v != '-'}
 
-                #self.lemmata_mapping.update(self.read_lemmata_from_tiger_corpus('corpora/tiger_release_aug07.corr.16012013.conll09'))
+                # self.lemmata_mapping.update(self.read_lemmata_from_tiger_corpus('corpora/tiger_release_aug07.corr.16012013.conll09'))
                 tiger = self.read_lemmata_from_tiger_corpus('corpora/tiger_release_aug07.corr.16012013.conll09')
                 tiger = {k: v for k, v in tiger.items() if v != '-'}
                 self.lemmata_mapping.update((k, v) for (k, v) in tiger.items() if v)
