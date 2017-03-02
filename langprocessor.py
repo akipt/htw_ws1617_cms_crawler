@@ -24,7 +24,7 @@ class LangProcessor:
                                               '/usr/share/hunspell/de_DE.aff')
         self.spellchecker_enc = self.spellchecker.get_dic_encoding()
 
-        self.load_lemmata(True)
+        self.load_lemmata()
 
         self.load_stopwords(stopwords_file)
 
@@ -134,17 +134,13 @@ class LangProcessor:
         text = re.sub(r"[-–­]\s[\n\r]*", '', text)  # id 11: Begriffs- klassifikation, ersetzt auch Gedankenstriche
 
         # übrig bleiben Gedankenstriche -> durch Leerzeichen ersetzen
-        # text = re.sub(r"\s[-–]\s", ' ', text)
+        text = re.sub(r"\s[-–]\s", ' ', text)
 
         # Bindestriche im Wort entfernen
-        # text = text.replace('\xad', '')
-        # text = text.replace('-', '')
-        # text = text.replace('–', '')
-        # text = text.replace('­','')
-        # text = re.sub(r"[-–­]", '', text)
-        text = re.sub(r"([A-ZÄÖÜ][a-zäöüß]*)[-–\xad]([A-ZÄÖÜ][a-zäöüß]*)", '\g<1> \g<2>',
-                      text)  # zusammengesetzte Nomen
-        text = re.sub(r"(\w*)[-–\xad](\w*)", '\g<1>\g<2>', text)  # alle anderen Bindestriche in Worten
+            # zusammengesetzte Nomen einzeln und zusammen speichern
+        text = re.sub(r"([A-ZÄÖÜ][a-zäöüß]*)[-–\xad]([A-ZÄÖÜ][a-zäöüß]*)", '\g<1> \g<2> \g<1>\g<2>',text)
+            # alle anderen Bindestriche in Worten
+        text = re.sub(r"(\w*)[-–\xad](\w*)", '\g<1>\g<2>', text)
 
         return text
 
