@@ -123,10 +123,12 @@ class Search3:
 
             return erg
 
-        relevant_doc_ids = reduce(lambda x,y: x & y, [set(inv_posindex[k][1].keys()) for k in queryterms])
+        relevant_doc_ids = reduce(lambda x,y: x & y, [set(inv_posindex[k][1].keys()) for k in queryterms if k in inv_posindex])
 
         for word in queryterms:
-            if word in inv_posindex.keys():
+            if word not in inv_posindex.keys(): # es müssen alle Wörter der Phrase enthalten sein
+                return []
+            else:
                 df, pl = inv_posindex[word]
                 doc_pos_mapping = {}
                 for doc_id in pl:
