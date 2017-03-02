@@ -24,7 +24,7 @@ class LangProcessor:
                                               '/usr/share/hunspell/de_DE.aff')
         self.spellchecker_enc = self.spellchecker.get_dic_encoding()
 
-        self.load_lemmata(True)
+        self.load_lemmata()
 
         self.load_stopwords(stopwords_file)
 
@@ -142,7 +142,7 @@ class LangProcessor:
         # text = text.replace('–', '')
         # text = text.replace('­','')
         # text = re.sub(r"[-–­]", '', text)
-        text = re.sub(r"([A-ZÄÖÜ][a-zäöüß]*)[-–\xad]([A-ZÄÖÜ][a-zäöüß]*)", '\g<1> \g<2>',
+        text = re.sub(r"([A-ZÄÖÜ][a-zäöüß]*)[-–\xad]([A-ZÄÖÜ][a-zäöüß]*)", '\g<1> \g<2> \g<1>\g<2>',
                       text)  # zusammengesetzte Nomen
         text = re.sub(r"(\w*)[-–\xad](\w*)", '\g<1>\g<2>', text)  # alle anderen Bindestriche in Worten
 
