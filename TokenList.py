@@ -19,6 +19,7 @@ class TokenList:
         self.documents = documents
         self.calc_term_frequencies_inverse_document_frequencies()
 
+    # ToDo: Relative Normalisierung
     def collect_norm_tf(self):
         for document in self.documents:
             for token in document.norm_tf.keys():
