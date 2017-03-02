@@ -10,12 +10,14 @@ from tempfile import mkdtemp, mkstemp
 from urllib.error import URLError, HTTPError
 from urllib.parse import urlparse, urlsplit, urlunsplit
 from urllib.request import Request, urlopen, build_opener, urlretrieve
-
 import tldextract
 from bs4 import BeautifulSoup, SoupStrainer
-
 from noredirection import NoRedirection
 from pageclass import Page
+import sys, getopt
+import souper
+from document import Document
+import pickle
 
 '''ToDo:
 write log (adding timestamps)
@@ -323,3 +325,39 @@ class Crawler:
             self.robotsfiles[host].allow_all = True
 
         return
+
+if __name__ == "__main__":
+    argv = sys.argv[1:]
+    optlist, args = getopt.getopt(argv, 's:w:')
+
+    whitelist = []
+    if len(optlist) == 0:
+        if len(args) == 0:
+            seed = 'http://www.datenlabor-berlin.de'
+            whitelist = ['datenlabor-berlin.de', 'datenlabor.berlin']
+        else:
+            seed = args[0]
+    for opt,arg in optlist:
+        if opt == '-s':
+            seed = arg
+        elif opt == '-w':
+            whitelist.append(arg)
+
+    my_crawler = Crawler(seed, whitelist)
+    page_list = my_crawler.do_crawling
+
+    # DEBUG
+    print("\nSuccessfully parsed: " + my_crawler.start_url + " (found %d files)" % len(my_crawler.pageList))
+    print("Files stored in " + my_crawler.baseFolder)
+
+    if len(my_crawler.pageList) > 0:
+        for x in my_crawler.pageList:
+            print(x.get_full_url())
+    # END_OF_DEBUG
+
+    docs = {}
+    for page in page_list:
+       docs[page.fullURL] = Document(souper.get_souped_title(page.html), souper.get_souped_text(page.html))
+    with open('helpers/docs.pickle', 'wb') as d:
+       pickle.dump(docs, d, protocol=2)
+
