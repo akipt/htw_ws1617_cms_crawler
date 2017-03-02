@@ -4,6 +4,7 @@ import nltk
 import pickle
 from nltk.tokenize.punkt import PunktSentenceTokenizer, PunktParameters
 from nltk.tokenize import RegexpTokenizer
+import loadhelper
 
 
 class LangProcessor:
@@ -15,7 +16,7 @@ class LangProcessor:
     stopwords = []
 
     def __init__(self, abbrevfile='helpers/abbreviations.txt', stopwords_file='helpers/stoppwortliste.txt'):
-        self.load_abbrevs(abbrevfile)
+        self.abbrevs = loadhelper.load_abbrevs(abbrevfile)
 
         # see http://www.ims.uni-stuttgart.de/forschung/ressourcen/lexika/TagSets/stts-table.html
         self.ausschlusstags = ['$.', 'CARD', '$,', '$(', 'ITJ']
@@ -24,9 +25,9 @@ class LangProcessor:
                                               '/usr/share/hunspell/de_DE.aff')
         self.spellchecker_enc = self.spellchecker.get_dic_encoding()
 
-        self.load_lemmata()
+        self.lemmata_mapping = loadhelper.load_lemmata()
 
-        self.load_stopwords(stopwords_file)
+        self.stopwords = loadhelper.load_stopwords(stopwords_file)
 
     def get_index(self, text, write_csv=True, csvfile='out/word_lemma_mapping.csv'):
         doc_index = []
@@ -85,6 +86,7 @@ class LangProcessor:
                 token = lemma.casefold()
                 #print(wort.ljust(20) + '\t' + token)
                 if write_csv:
+                    # noinspection PyUnboundLocalVariable
                     fobj_out.write(wort + '\t' + token + '\n')
 
                 # Indexliste aufbauen
@@ -101,17 +103,6 @@ class LangProcessor:
             t = t.replace(' ' + abbrev.casefold() + ' ', ' ' + self.abbrevs[abbrev].casefold() + ' ')
 
         return t
-
-    def load_abbrevs(self, abbrev_file):
-        try:
-            with open(abbrev_file) as f:
-                for line in f:
-                    parts = line.split(';')
-                    if len(parts) == 2:
-                        a, w = parts[0], parts[1]
-                        self.abbrevs[a] = w.strip()
-        except FileNotFoundError:
-            print("No Abbreviations found.")
 
     @staticmethod
     def remove_hyphens(t):
@@ -211,54 +202,6 @@ class LangProcessor:
                         words.remove(appr)
                         postags.remove((appr, apprpos))
 
-    @staticmethod
-    def read_lemmata_from_tiger_corpus(tiger_corpus_file, valid_cols_n=15, col_words=1, col_lemmata=2):
-        lemmata_mapping = {}
-
-        with open(tiger_corpus_file) as f:
-            for line in f:
-                parts = line.split()
-                if len(parts) == valid_cols_n:
-                    w, lemma = parts[col_words], parts[col_lemmata]
-                    if w != lemma and w not in lemmata_mapping and not lemma.startswith('--'):
-                        lemmata_mapping[w] = lemma
-
-        return lemmata_mapping
-
-    def load_lemmata(self, loadnew=False):
-        if loadnew:
-            try:
-                self.lemmata_mapping = self.read_lemmata_from_tiger_corpus('corpora/part_A.conll', 10)
-                self.lemmata_mapping.update(self.read_lemmata_from_tiger_corpus('corpora/part_B.conll', 10))
-                self.lemmata_mapping.update(self.read_lemmata_from_tiger_corpus('corpora/part_C.conll', 10))
-                self.lemmata_mapping = {k: v for k, v in self.lemmata_mapping.items() if v != 'unknown'}
-                self.lemmata_mapping = {k: v for k, v in self.lemmata_mapping.items() if v != '-'}
-
-                # self.lemmata_mapping.update(self.read_lemmata_from_tiger_corpus('corpora/tiger_release_aug07.corr.16012013.conll09'))
-                tiger = self.read_lemmata_from_tiger_corpus('corpora/tiger_release_aug07.corr.16012013.conll09')
-                tiger = {k: v for k, v in tiger.items() if v != '-'}
-                self.lemmata_mapping.update((k, v) for (k, v) in tiger.items() if v)
-
-                own_dict = {}
-                try:
-                    with open('helpers/custom_lemmata.txt') as f:
-                        for line in f:
-                            parts = line.split(';')
-                            if len(parts) == 2:
-                                a, w = parts[0], parts[1]
-                                own_dict[a] = w.strip()
-                    self.lemmata_mapping.update(own_dict)
-                except FileNotFoundError:
-                    print("Custom Lemmata could not be loaded.")
-
-                with open('helpers/lemmata_mapping.pickle', 'wb') as f:
-                    pickle.dump(self.lemmata_mapping, f, protocol=2)
-            except:
-                print("Lemmata could not be loaded.")
-
-        else:
-            with open('helpers/lemmata_mapping.pickle', 'rb') as f:
-                self.lemmata_mapping = pickle.load(f)
 
     def find_lemma(self, w):
         w_lemma = None
@@ -291,22 +234,7 @@ class LangProcessor:
                 if len(suggestions) > 0:
                     neu_w = suggestions[0].decode(self.spellchecker_enc)
 
-        # fallback
-        # if not neu_w:
-        #    neu_w = w
-
         return neu_w
-
-    def load_stopwords(self, stopwords_file):
-        try:
-            with open(stopwords_file) as f:
-                for line in f:
-                    if line is not '':
-                        # print(line)
-                        self.stopwords.append(line.strip().casefold())
-                        # print(stopwords)
-        except:
-            print("Stopword List could not be loaded.")
 
     def find_compound_nouns(self, postags, tokens):
         zus = ''
