@@ -34,7 +34,7 @@ class LangProcessor:
         if write_csv:
             fobj_out = open(csvfile, "a")
 
-        text = self.remove_dates(text)
+        #text = self.remove_dates(text)
 
         sents = self.split_sents(text, self.abbrevs)
 
