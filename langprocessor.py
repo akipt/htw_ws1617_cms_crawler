@@ -182,7 +182,7 @@ class LangProcessor:
 
     @staticmethod
     def do_pos_tagging(tokens):
-        with open('pickle/nltk_german_classifier_data_tiger.pickle', 'rb') as f:
+        with open('helpers/nltk_german_classifier_data_tiger.pickle', 'rb') as f:
             tagger = pickle.load(f)
 
         # tag tokens
@@ -267,13 +267,13 @@ class LangProcessor:
                 except FileNotFoundError:
                     print("Custom Lemmata could not be loaded.")
 
-                with open('pickle/lemmata_mapping.pickle', 'wb') as f:
+                with open('helpers/lemmata_mapping.pickle', 'wb') as f:
                     pickle.dump(self.lemmata_mapping, f, protocol=2)
             except:
                 print("Lemmata could not be loaded.")
 
         else:
-            with open('pickle/lemmata_mapping.pickle', 'rb') as f:
+            with open('helpers/lemmata_mapping.pickle', 'rb') as f:
                 self.lemmata_mapping = pickle.load(f)
 
     def find_lemma(self, w):

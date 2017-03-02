@@ -9,6 +9,7 @@ import souper
 
 
 def main():
+    my_crawler = Crawler("http://www.datenlabor-berlin.de", ["datenlabor.berlin", "datenlabor-berlin.de"])
     page_list = my_crawler.do_crawling
 
     # DEBUG
@@ -19,29 +20,29 @@ def main():
         for x in my_crawler.pageList:
             print(x.get_full_url())
     # END_OF_DEBUG
-    #with open('pickle/pages.pickle', 'wb') as p:
+    #with open('helpers/pages.pickle', 'wb') as p:
     #    pickle.dump(page_list, p, protocol=2)
-    #with open('pickle/pages.pickle', 'rb') as p:
+    #with open('helpers/pages.pickle', 'rb') as p:
     #    page_list = pickle.load(p)
 
     docs = {}
 
     for page in page_list:
        docs[page.fullURL] = Document(souper.get_souped_title(page.html), souper.get_souped_text(page.html), souper.get_encoding(page.html))
-    #with open('pickle/docs.pickle', 'wb') as d:
+    #with open('helpers/docs.pickle', 'wb') as d:
     #   pickle.dump(docs, d, protocol=2)
 
     l = LangProcessor()
 
-    #with open('pickle/docs.pickle', 'rb') as d:
+    #with open('helpers/docs.pickle', 'rb') as d:
     #    docs = pickle.load(d)
-    csvfile = "word_lemma_mapping.csv"
+    csvfile = "out/word_lemma_mapping.csv"
     fobj_out = open(csvfile, "w")
     fobj_out.close()
     for docid in docs.keys():
         doc = docs[docid]
         print(docid)
-        doc.indexliste = l.get_index(doc.text,False)
+        doc.indexliste = l.get_index(doc.text,False, csvfile)
     #k = 'http://www.datenlabor-berlin.de/index.php?id=11'
     #k = 'http://www.datenlabor-berlin.de'
     #indexliste = l.get_index(docs[k].text)
@@ -58,9 +59,9 @@ def main():
 
 
 
-    with open('pickle/invertierter_index.pickle', 'wb') as f:
+    with open('helpers/invertierter_index.pickle', 'wb') as f:
         pickle.dump(inv_index, f, protocol=2)
-    with open('pickle/invertierter_posindex.pickle', 'wb') as p:
+    with open('helpers/invertierter_posindex.pickle', 'wb') as p:
         pickle.dump(inv_posindex, p, protocol=2)
 
     ### Test TF-IDF und Scoring ###
