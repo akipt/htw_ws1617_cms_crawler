@@ -7,7 +7,7 @@ Entwicklung;entwickeln
 Mining;Mining
 Schwerpunkt;Schwerpunkt
 Datensätze;Datensatz
-Graphen,Graph
+Graphen;Graph
 Netzstrukturen;Netzstruktur
 Logdateien;Logdatei
 Bereinigung;bereinigen
@@ -149,3 +149,15 @@ falls;falls
 unstrukturierter;unstrukturiert
 unstrukturierte;unstrukturiert
 unstrukturiert;unstrukturiert
+Abbildung;abbilden
+Abbildungen;abbilden
+abgeleiteten;ableiten
+abschließender;abschliessend
+Algorithmen;Algorithmus
+Annotationen;Annotation
+anschliessende;anschliessend
+anschliessenden;anschliessend
+Anwendung;Anwendung
+Anwendungsbereich;Anwendungsbereich
+Anwendungsspezifischen;anwendungsspezifisch
+Anzahlen;Anzahl

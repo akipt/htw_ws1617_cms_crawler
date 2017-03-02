@@ -30,8 +30,12 @@ z.Zt.;zur Zeit
 lt.;laut
 ca.;circa
 rd.;rund
+rd;rund
 &;und
 evtl.;eventuell
 bzgl.;bezüglich
 o.;oder
 Mio;Million
+Dr.;Dr.
+rer.;rer.
+nat.;nat.
