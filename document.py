@@ -5,14 +5,12 @@ class Document:
     title = ''
     text = ''
     indexliste = []
-    encoding = ''
     abs_tf = {} #absolute term frequency
     norm_tf = {} #augmented term frequency
 
-    def __init__(self, title='', text='', encoding=''):
+    def __init__(self, title='', text=''):
         self.title = title
         self.text = text
-        self.encoding = encoding
 
     def calc_term_frequencies(self):
 
