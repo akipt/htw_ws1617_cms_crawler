@@ -14,7 +14,7 @@ class LangProcessor:
     spellchecker_enc = 'UTF-8'
     stopwords = []
 
-    def __init__(self, abbrevfile='abbreviations.txt', stopwords_file='stoppwortliste.txt'):
+    def __init__(self, abbrevfile='helpers/abbreviations.txt', stopwords_file='helpers/stoppwortliste.txt'):
         self.load_abbrevs(abbrevfile)
 
         # see http://www.ims.uni-stuttgart.de/forschung/ressourcen/lexika/TagSets/stts-table.html
