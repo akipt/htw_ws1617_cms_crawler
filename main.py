@@ -9,7 +9,6 @@ import souper
 
 
 def main():
-    my_crawler = Crawler("http://www.datenlabor-berlin.de", ["datenlabor.berlin", "datenlabor-berlin.de"])
     page_list = my_crawler.do_crawling
 
     # DEBUG
@@ -20,12 +19,15 @@ def main():
         for x in my_crawler.pageList:
             print(x.get_full_url())
     # END_OF_DEBUG
+    #with open('pickle/pages.pickle', 'wb') as p:
+    #    pickle.dump(page_list, p, protocol=2)
+    #with open('pickle/pages.pickle', 'rb') as p:
+    #    page_list = pickle.load(p)
 
     docs = {}
 
     for page in page_list:
-       docs[page.fullURL] = Document(souper.get_souped_title(page.html), souper.get_souped_text(page.html))
-
+       docs[page.fullURL] = Document(souper.get_souped_title(page.html), souper.get_souped_text(page.html), souper.get_encoding(page.html))
     #with open('pickle/docs.pickle', 'wb') as d:
     #   pickle.dump(docs, d, protocol=2)
 
@@ -33,11 +35,16 @@ def main():
 
     #with open('pickle/docs.pickle', 'rb') as d:
     #    docs = pickle.load(d)
-
+    csvfile = "word_lemma_mapping.csv"
+    fobj_out = open(csvfile, "w")
+    fobj_out.close()
     for docid in docs.keys():
         doc = docs[docid]
         print(docid)
-        doc.indexliste = l.get_index(doc.text)
+        doc.indexliste = l.get_index(doc.text,False)
+    #k = 'http://www.datenlabor-berlin.de/index.php?id=11'
+    #k = 'http://www.datenlabor-berlin.de'
+    #indexliste = l.get_index(docs[k].text)
 
     inv_index = Indexer.get_inverse_index(docs)
     inv_posindex = Indexer.get_inverse_posindex(docs)
@@ -53,7 +60,7 @@ def main():
         pickle.dump(inv_posindex, p, protocol=2)
 
     ### Test TF-IDF und Scoring ###
-    docnum = len(docs)
+    '''docnum = len(docs)
     print("\nTest TF-IDF: vgl. Folie 26 in 12a")
     for docid in docs.keys():
         print("\tTop words in document {}".format(docid))
@@ -61,7 +68,7 @@ def main():
         scores = {word: Search3.get_tfidf(word, docid, docnum, inv_index) for word in set(doc_index)}
         sorted_words = sorted(scores.items(), key=lambda x: x[1], reverse=True)
         for word, score in sorted_words[:3]:
-            print("\t\t{}: {}".format(word, round(score, 3)))
+            print("\t\t{}: {}".format(word, round(score, 3)))'''
 
 
 if __name__ == "__main__":

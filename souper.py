@@ -1,5 +1,6 @@
 from textextractor import TextExtractor
 from bs4 import BeautifulSoup
+import re
 
 def get_souped_text(html):
     final_text = ''
@@ -24,10 +25,22 @@ def get_souped_text(html):
     return (final_text)
 
 def get_souped_title(html):
-    final_title = ''
-    soup = BeautifulSoup(html, 'html.parser')
-
     # Inhalt des HTML-Titletags (head title)
-    final_title += TextExtractor.extract_title(html)
+    final_title = TextExtractor.extract_title(html)
 
     return final_title
+
+'''def get_encoding(html):
+    soup = BeautifulSoup(html, 'html.parser')
+
+    encod = soup.meta.get('charset')
+    if encod == None:
+        encod = soup.meta.get('content-type')
+        if encod == None:
+            content = soup.meta.get('content')
+            match = re.search('charset=(.*)', content)
+            if match:
+                encod = match.group(1)
+            else:
+                raise ValueError('unable to find encoding')
+    return encod'''

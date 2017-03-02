@@ -2,6 +2,8 @@ import hunspell
 import re
 import nltk
 import pickle
+from nltk.tokenize.punkt import PunktSentenceTokenizer, PunktParameters
+from nltk.tokenize import RegexpTokenizer
 
 
 class LangProcessor:
@@ -26,16 +28,22 @@ class LangProcessor:
 
         self.load_stopwords(stopwords_file)
 
-    def get_index(self, text):
+    def get_index(self, text, write_csv=True, csvfile='word_lemma_mapping.csv'):
         doc_index = []
-
         text = self.remove_abbrev(text)
+        if write_csv:
+            fobj_out = open(csvfile, "a")
 
-        sents = self.split_sents(text)
+        text = self.remove_dates(text)
+
+        sents = self.split_sents(text, self.abbrevs)
 
         for sent in sents:
             sent = self.remove_hyphens(sent)
             tokens = self.split_tokens(sent)
+
+            if len(tokens) == 0:
+                continue
             postags = self.do_pos_tagging(tokens)
 
             # Bindestrich-Substantive behandeln (Chunking)
@@ -50,7 +58,6 @@ class LangProcessor:
                 # Satzzeichen und Zahlen entfernen
                 if pos in self.ausschlusstags or len(wort) == 1:
                     continue
-                wort = wort.replace('..', '')
 
                 # Namen werden nicht geprüft
                 if pos == 'NE':
@@ -78,10 +85,13 @@ class LangProcessor:
 
                 # Normalisieren (Kleinschreibung)
                 token = lemma.casefold()
+                if write_csv:
+                    fobj_out.write(wort + ',\t' + token + '\n')
 
                 # Indexliste aufbauen
                 doc_index.append(token)
-
+        if write_csv:
+            fobj_out.close()
         return doc_index
 
     ##################################### Hilfsmethoden ##################################
@@ -89,7 +99,8 @@ class LangProcessor:
 
     def remove_abbrev(self, t):
        for abbrev in self.abbrevs:
-           t = t.replace(abbrev, self.abbrevs[abbrev])
+           t = t.replace(' '+abbrev.casefold()+' ', ' '+self.abbrevs[abbrev].casefold()+' ')
+           #t = re.sub(r"""\s""")
        return t
 
     def load_abbrevs(self, abbrev_file):
@@ -106,47 +117,66 @@ class LangProcessor:
 
     @staticmethod
     def remove_hyphens(t):
+        # Testdatei: Startseite, Satz 7
+        #text = t.strip(' \t\n\r')
+
         # Entferne doppelte Bindestriche
-        text = t.replace('­­', '-')
+        #text = t.replace('­­', '-')
+        text = re.sub(r"[-–­]{2}", '-', t)
 
         # Entferne unvollständige Kompositionsteile (inkl. 'und')
-        text = re.sub(r"\w+[-–]([.,]|\sund\s)", '', text)  # vorn (An- und Abreise)
-        text = re.sub(r"(\sund\s|,\s)[-–]\w+", '', text)  # hinten (Spielspaß und -freude)
+        text = re.sub(r"\w+[-–­]([.,]|\sund\s)", '', text)  # vorn (An- und Abreise)
+        text = re.sub(r"(\sund\s|,\s)[-–­]\w+", '', text)  # hinten (Spielspaß und -freude)
 
         # Entferne Bindestriche in hart codierten Worttrennungen
-        text = re.sub(r"[-–][\n\r]+", '', text)
-        text = re.sub(r"[-–]\s[\n\r]+", '', text)
+        text = re.sub(r"[-–­][\n\r]+", '', text)
+        #text = re.sub(r"[-–]\s[\n\r]+", '', text)
+        text = re.sub(r"[-–­]\s[\n\r]*", '', text)  # id 11: Begriffs- klassifikation, ersetzt auch Gedankenstriche
 
         # übrig bleiben Gedankenstriche -> durch Leerzeichen ersetzen
-        text = text.replace(' – ', ' ')
-        text = text.replace(' - ', ' ')
+        #text = re.sub(r"\s[-–]\s", ' ', text)
 
         # Bindestriche im Wort entfernen
-        text = text.replace('­', '')
-        text = text.replace('-', '')    # TODO: replace entfernt immer nur das erste Auftreten?
-        text = text.replace('–', '')
-        text = text.replace('\xad', '')
-
+        #text = text.replace('\xad', '')
+        #text = text.replace('-', '')
+        #text = text.replace('–', '')
+        #text = text.replace('­','')
+        #text = re.sub(r"[-–­]", '', text)
+        text = re.sub(r"([A-ZÄÖÜ][a-zäöüß]*)[-–\xad]([A-ZÄÖÜ][a-zäöüß]*)", '\g<1> \g<2>', text) # zusammengesetzte Nomen
+        text = re.sub(r"(\w*)[-–\xad](\w*)", '\g<1>\g<2>', text)    # alle anderen Bindestriche in Worten
 
 
         return text
 
     @staticmethod
-    def split_sents(text):
+    def remove_dates(t):
+        text = re.sub(r"\d+.[\s]*(Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|\d\d.)\s*(\d{4})", '', t)
+        #for b in re.finditer(r"\d+.[\s]*(Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|\d\d.)\s*(\d{4})", t):
+        #    pass
+        return text
 
-        sent_tokenizer = nltk.data.load('tokenizers/punkt/german.pickle')
-        sents = sent_tokenizer.tokenize(text)
+    @staticmethod
+    def split_sents(text, abbrevs):
+
+        #sent_tokenizer = nltk.data.load('tokenizers/punkt/german.pickle')
+        #sents = sent_tokenizer.tokenize(text)
+
+        punkt_param = PunktParameters()
+        abbreviation = list(abbrevs.keys())
+        punkt_param.abbrev_types = set(abbreviation)
+        tokenizer = PunktSentenceTokenizer(punkt_param)
+        sents = tokenizer.tokenize(text)
 
         return sents
 
     @staticmethod
     def split_tokens(text):
-        #t = text.replace('"', '')
-        #t = t.replace('“', '')
-        #t = t.replace('”', '')
-        #t = t.replace('„', '')
-        t = re.sub(r"[\"“”„]", '', text)
-        tokens = nltk.word_tokenize(t)
+        #t = re.sub(r"[\"“”„]", '', text)
+        #tokens = nltk.word_tokenize(t)
+        #expr = r'''\w+|\$\w[\w|-|/|\.]*|\S+'''
+        expr = r'''[A-Za-zÄÖÜäöü][a-zäöüß[A-ZÄÖÜa-zäöüß|-|–|/|\.|\'’]*[A-ZÄÖÜa-zäöüß]'''
+        tokenizer = RegexpTokenizer(expr)
+        tokens = tokenizer.tokenize(text)
 
         return tokens
 
@@ -217,13 +247,30 @@ class LangProcessor:
                 self.lemmata_mapping = self.read_lemmata_from_tiger_corpus('corpora/part_A.conll', 10)
                 self.lemmata_mapping.update(self.read_lemmata_from_tiger_corpus('corpora/part_B.conll', 10))
                 self.lemmata_mapping.update(self.read_lemmata_from_tiger_corpus('corpora/part_C.conll', 10))
-                self.lemmata_mapping.update(
-                    self.read_lemmata_from_tiger_corpus('corpora/tiger_release_aug07.corr.16012013.conll09'))
+                self.lemmata_mapping = {k: v for k, v in self.lemmata_mapping.items() if v != 'unknown'}
+                self.lemmata_mapping = {k: v for k, v in self.lemmata_mapping.items() if v != '-'}
+
+                #self.lemmata_mapping.update(self.read_lemmata_from_tiger_corpus('corpora/tiger_release_aug07.corr.16012013.conll09'))
+                tiger = self.read_lemmata_from_tiger_corpus('corpora/tiger_release_aug07.corr.16012013.conll09')
+                tiger = {k: v for k, v in tiger.items() if v != '-'}
+                self.lemmata_mapping.update((k, v) for (k, v) in tiger.items() if v)
+
+                own_dict = {}
+                try:
+                    with open('custom_lemmata.txt') as f:
+                        for line in f:
+                            parts = line.split(';')
+                            if len(parts) == 2:
+                                a, w = parts[0], parts[1]
+                                own_dict[a] = w.strip()
+                    self.lemmata_mapping.update(own_dict)
+                except FileNotFoundError:
+                    print("Custom Lemmata could not be loaded.")
 
                 with open('pickle/lemmata_mapping.pickle', 'wb') as f:
                     pickle.dump(self.lemmata_mapping, f, protocol=2)
             except:
-                print("Lemmatas could not be loaded.")
+                print("Lemmata could not be loaded.")
 
         else:
             with open('pickle/lemmata_mapping.pickle', 'rb') as f:
@@ -253,7 +300,6 @@ class LangProcessor:
         neu_w = w
 
         if self.spellchecker:
-            print(w)
             corrspell = self.spellchecker.spell(w)
 
             if not corrspell:

@@ -9,10 +9,12 @@ class Document:
     abs_tf = {}
     norm_tf = {}
     tf_idf = {}
+    encoding = ''
 
-    def __init__(self, title='', text=''):
+    def __init__(self, title='', text='', encoding=''):
         self.title = title
         self.text = text
+        self.encoding = encoding
 
     def calc_term_frequencies(self):  # TODO: überflüssig?
 

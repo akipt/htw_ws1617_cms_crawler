@@ -30,5 +30,8 @@ z.Zt.;zur Zeit
 lt.;laut
 ca.;circa
 rd.;rund
-i.E.; 
 &;und
+evtl.;eventuell
+bzgl.;bezüglich
+o.;oder
+Mio;Million
