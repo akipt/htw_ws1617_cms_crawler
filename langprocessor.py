@@ -28,7 +28,7 @@ class LangProcessor:
 
         self.load_stopwords(stopwords_file)
 
-    def get_index(self, text, write_csv=True, csvfile='word_lemma_mapping.csv'):
+    def get_index(self, text, write_csv=True, csvfile='out/word_lemma_mapping.csv'):
         doc_index = []
         text = self.remove_abbrev(text)
         if write_csv:
@@ -85,7 +85,7 @@ class LangProcessor:
 
                 # Normalisieren (Kleinschreibung)
                 token = lemma.casefold()
-                print(wort.ljust(20) + '\t' + token)
+                #print(wort.ljust(20) + '\t' + token)
                 if write_csv:
                     fobj_out.write(wort + '\t' + token + '\n')
 
