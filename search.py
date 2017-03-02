@@ -8,19 +8,64 @@ from functools import reduce
 from langprocessor import LangProcessor
 import math
 
-'''TODO:
-Ranking für Boolsches IR
-Aufruf vereinheitlichen (Options wieder raus, Logikanfragen erkennt man auch so)
-    3 Modi:
-        - Keywords (mehrere Suchbegriffe übergeben) -> Vektorraum-Retrieval
-        - Logik -> Boolsches Retrieval
-        - NEAR -> Boolsches Retrieval über PosIndex (Abstand 1)
-'''
+
+def get_score(queryterms, doc_id, docnum, inv_index):
+    '''
+    Calculate the Score for a query and a document by adding up the TF-IDF of each query token
+    :param queryterms: list of query tokens (nlp-processed)
+    :param doc_id: ID of the document to be scored
+    :param docnum: number of documents in collection
+    :param inv_index: dictionary containing the inverse index
+    :return: score as double value
+    '''
+    summe = 0
+    for word in queryterms:
+        tf_idf = get_tfidf(word, doc_id, docnum, inv_index)
+        summe += tf_idf
+
+    summe = sum(get_tfidf(word, doc_id, docnum, inv_index) for word in queryterms)
+
+    return summe
+
+
+def get_tfidf(word, doc_id, docnum, inv_index):
+    '''
+    Calculate TF-IDF per token and document
+    :param word: token (nlp-prcessed)
+    :param doc_id: ID of the document
+    :param docnum: number of documents in collection
+    :param inv_index: dictionary containing the inverse index
+    :return: TF-IDF as double value
+    '''
+    # tf-idf pro term und dokument (Zelle in Matrix)
+
+    # tf [term frequency] = ? -> relativ, absolut und normiert
+    # cf [collection frequency] = total number of occurrences of a term in the collection
+    # df [document frequency] = number of documents in the collection that contain a term
+    # idf [inverse document frequency] = Bedeutung des Terms in der Gesamtmenge der Dokumente
+    # tf-idf = importance of terms in a document based on how frequently they appear across multiple documents
+
+    if word not in inv_index:
+        return 0
+    pl = inv_index[word][1]
+    df = len(pl)
+    idf = math.log10(docnum / df)
+    if doc_id in pl:
+        tf = pl[doc_id]
+    else:
+        tf = 0
+    tf_idf = tf * idf
+    return tf_idf
 
 
 class Search3:
     @staticmethod
     def process(argv):
+        '''
+        Reads in the parameters, starts one of the available searches and return the search result
+        :param argv: search terms and options (-b for boolean search, -p for phrase search)
+        :return: list of document IDs mathcing the query
+        '''
         erg = []
 
         with open('helpers/invertierter_index.pickle', 'rb') as f:
@@ -51,30 +96,35 @@ class Search3:
 
     @staticmethod
     def boolean_search(query, inv_ind):
+        '''
+        Conducts a Boolean Retrieval for a query containig logical expressions.
+        First, the expression is parsed and converted to inverse polish notation.
+        Afterwards, the search result for each token is retrieved and results are merged
+        :param query: String containing logical expression (AND, OR, NOT supported)
+        :param inv_ind: dictionary containing inverse index
+        :return: list of matching document IDs, sorted by document ID
+        '''
         l = LangProcessor()
         query_postfix = ShYard.get_postfix(query).split()
 
         st = Stack()
-        for teilquery in query_postfix:
-            # print(teilquery)
-            if teilquery not in ['AND', 'OR', 'NOT']:
-                term = l.get_index(teilquery)[0]  # wieder herausgenommen: Autokorrektur zerstört Such-Terms
-                # term = teilquery
-                if term in inv_ind:
-                    docs = inv_ind[term][1]
+        for term in query_postfix:
+            if term not in ['AND', 'OR', 'NOT']:
+                token = l.get_index(term)[0]
+                if token in inv_ind:
+                    docs = inv_ind[token][1]
                 else:
                     docs = {}
                 st.push(set(docs.keys()))
-                # print(st)
             else:
                 q2 = st.pop()
                 q1 = st.pop()
                 bool_ergebnis = {}
-                if teilquery == 'AND':
+                if term == 'AND':
                     bool_ergebnis = reduce(lambda s1, s2: s1 & s2, [q1, q2])
-                elif teilquery == 'OR':
+                elif term == 'OR':
                     bool_ergebnis = set(doc for docs in [q1, q2] for doc in docs)
-                elif teilquery == 'NOT':
+                elif term == 'NOT':
                     st.push(q1)  # zurücklegen
                     q1 = set(doc for d, docs in inv_ind.values() for doc in docs)
                     bool_ergebnis = q1.difference(q2)
@@ -87,12 +137,18 @@ class Search3:
 
     @staticmethod
     def vector_search(query, inv_index):
+        '''
+        Conducts a vector retrieval
+        :param query: String with query term(s)
+        :param inv_index: dictionary containing inverse index
+        :return: list of matching document IDs, sorted by TF-IDF
+        '''
         l = LangProcessor()
         docids = set(doc for d, docs in inv_index.values() for doc in docs)
         queryterms = l.get_index(query)
         vec_ergebnis = []
         for docid in docids:
-            score = Search3.get_score(queryterms, docid, len(docids), inv_index)
+            score = get_score(queryterms, docid, len(docids), inv_index)
             if score > 0:
                 vec_ergebnis.append((docid, score))
 
@@ -104,11 +160,26 @@ class Search3:
 
     @staticmethod
     def phrase_search(query, inv_posindex):
+        '''
+        Conducts a phrase search (boolean retrieval with positions).
+        First, a temporary list is constucted, containing the token list (dictionary) for each token in the phrase
+        (only documents, which contain all words of the phrase are included -> each posting list contains the same document IDs!)
+        These posting lists are then reduced to a list of document IDs
+        :param query: String containg the query phrase
+        :param inv_posindex: dictionary containing inverse index
+        :return: list of matching document IDs, sorted by document ID
+        '''
         l = LangProcessor()
         queryterms = l.get_index(query)
         templiste = []
 
         def filter_near(s1, s2):
+            '''
+            Custom Reduce Function: two postings are merged, if they contain at least one consecutive position - if not, the posting is deleted
+            :param s1: posting list and positions of actual word (order is important!) {docid1:{1, 3}, docid2:{5}}
+            :param s2: posting list of next word {docid1:{4, 8}, docid2:{7}}
+            :return: merged posting list {docid1:{4}} -> will be used as s1 in next call
+            '''
             erg = {}
             for docid in s1:
                 if docid in s2:
@@ -144,39 +215,6 @@ class Search3:
 
         phrase_ergebnis = sorted(phrase_ergebnis)
         return phrase_ergebnis
-
-    @staticmethod
-    def get_score(queryterms, doc_id, docnum, inv_index):
-        summe = 0
-        for word in queryterms:
-            tf_idf = Search3.get_tfidf(word, doc_id, docnum, inv_index)
-            summe += tf_idf
-
-        summe = sum(Search3.get_tfidf(word, doc_id, docnum, inv_index) for word in queryterms)
-
-        return summe
-
-    @staticmethod
-    def get_tfidf(word, doc_id, docnum, inv_index):
-        # tf-idf pro term und dokument (Zelle in Matrix)
-
-        # tf [term frequency] = ? -> relativ, absolut und normiert
-        # cf [collection frequency] = total number of occurrences of a term in the collection
-        # df [document frequency] = number of documents in the collection that contain a term
-        # idf [inverse document frequency] = Bedeutung des Terms in der Gesamtmenge der Dokumente
-        # tf-idf = importance of terms in a document based on how frequently they appear across multiple documents
-
-        if word not in inv_index:
-            return 0
-        pl = inv_index[word][1]
-        df = len(pl)
-        idf = math.log10(docnum / df)
-        if doc_id in pl:
-            tf = pl[doc_id]
-        else:
-            tf = 0
-        tf_idf = tf * idf
-        return tf_idf
 
 
 if __name__ == "__main__":

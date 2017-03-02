@@ -4,6 +4,7 @@ import nltk
 import pickle
 from nltk.tokenize.punkt import PunktSentenceTokenizer, PunktParameters
 from nltk.tokenize import RegexpTokenizer
+import loadhelper
 
 
 class LangProcessor:
@@ -15,7 +16,12 @@ class LangProcessor:
     stopwords = []
 
     def __init__(self, abbrevfile='helpers/abbreviations.txt', stopwords_file='helpers/stoppwortliste.txt'):
-        self.load_abbrevs(abbrevfile)
+        '''
+        Initialize Object: load all the needed resources
+        :param abbrevfile: default path to abbreviations file
+        :param stopwords_file: default path to stopwords file
+        '''
+        self.abbrevs = loadhelper.load_abbrevs(abbrevfile)
 
         # see http://www.ims.uni-stuttgart.de/forschung/ressourcen/lexika/TagSets/stts-table.html
         self.ausschlusstags = ['$.', 'CARD', '$,', '$(', 'ITJ']
@@ -24,17 +30,22 @@ class LangProcessor:
                                               '/usr/share/hunspell/de_DE.aff')
         self.spellchecker_enc = self.spellchecker.get_dic_encoding()
 
-        self.load_lemmata()
+        self.lemmata_mapping = loadhelper.load_lemmata()
 
-        self.load_stopwords(stopwords_file)
+        self.stopwords = loadhelper.load_stopwords(stopwords_file)
 
     def get_index(self, text, write_csv=True, csvfile='out/word_lemma_mapping.csv'):
+        '''
+        The main NLP method: process a document and construct the token index
+        :param text: a text
+        :param write_csv: True, if csv containing tokens and their lemmata should be written
+        :param csvfile: path to token-lemma-csv (only if write_csv is true)
+        :return: list of all the tokens of the text (sorted alphabetically) - may contain duplicates
+        '''
         doc_index = []
-        text = self.remove_abbrev(text)
+        text = self.remove_abbrev(text, self.abbrevs)
         if write_csv:
             fobj_out = open(csvfile, "a")
-
-        # text = self.remove_dates(text)
 
         sents = self.split_sents(text, self.abbrevs)
 
@@ -47,7 +58,7 @@ class LangProcessor:
             postags = self.do_pos_tagging(tokens)
 
             # Bindestrich-Substantive behandeln (Chunking)
-            self.find_compound_nouns(postags, tokens)
+            #self.find_compound_nouns(postags, tokens)
 
             # zusammengesetzte Verben suchen (Chunking)
             self.find_compound_verbs(postags, tokens)
@@ -70,7 +81,7 @@ class LangProcessor:
                         continue
 
                     # Tippfehler korrigieren
-                    corrwort = self.correct_typo(wort)
+                    '''corrwort = self.correct_typo(wort)
                     # wenn Korrektur mehr als 1 Wort ergibt: in Postag-Liste einfügen und einzeln verarbeiten
                     if len(corrwort.split(' ')) > 1:
                         npostags = self.do_pos_tagging(corrwort.split(' '))
@@ -80,13 +91,14 @@ class LangProcessor:
                         continue
 
                     # Lemmatisieren
-                    # lemma = self.find_lemma(corrwort)
+                    lemma = self.find_lemma(corrwort)'''
                     lemma = self.find_lemma(wort)
 
                 # Normalisieren (Kleinschreibung)
                 token = lemma.casefold()
                 #print(wort.ljust(20) + '\t' + token)
                 if write_csv:
+                    # noinspection PyUnboundLocalVariable
                     fobj_out.write(wort + '\t' + token + '\n')
 
                 # Indexliste aufbauen
@@ -97,31 +109,29 @@ class LangProcessor:
 
     ##################################### Hilfsmethoden ##################################
 
+    @staticmethod
+    def remove_abbrev(t, abbrevs):
+        '''
+        Replace abbreviations in a text with their translations
+        :param t: the text (possibly with abbreviations)
+        :param abbrevs: dictionary of abbreviations {abbreviation:translation}
+        :return: text without abbreviations
+        '''
+        for abbrev in abbrevs:
+            t = t.replace(' ' + abbrev.casefold() + ' ', ' ' + abbrevs[abbrev].casefold() + ' ')
 
-    def remove_abbrev(self, t):
-        for abbrev in self.abbrevs:
-            t = t.replace(' ' + abbrev.casefold() + ' ', ' ' + self.abbrevs[abbrev].casefold() + ' ')
-            # t = re.sub(r"""\s""")
         return t
-
-    def load_abbrevs(self, abbrev_file):
-        try:
-            with open(abbrev_file) as f:
-                for line in f:
-                    parts = line.split(';')
-                    if len(parts) == 2:
-                        a, w = parts[0], parts[1]
-                        self.abbrevs[a] = w.strip()
-        except FileNotFoundError:
-            print("No Abbreviations found.")
 
     @staticmethod
     def remove_hyphens(t):
+        '''
+        Remove all kinds of hyphens in a text
+        :param t: the text
+        :return: text without hyphens
+        '''
         # Testdatei: Startseite, Satz 7
-        # text = t.strip(' \t\n\r')
 
         # Entferne doppelte Bindestriche
-        # text = t.replace('­­', '-')
         text = re.sub(r"[-–­]{2}", '-', t)
 
         # Entferne unvollständige Kompositionsteile (inkl. 'und')
@@ -129,7 +139,7 @@ class LangProcessor:
         text = re.sub(r"(\sund\s|,\s)[-–­]\w+", '', text)  # hinten (Spielspaß und -freude)
 
         # Entferne Bindestriche in hart codierten Worttrennungen
-        text = re.sub(r"[-–­][\n\r]+", '', text)
+        text = re.sub(r"[-–­][\n\r]+", '', text)        # TODO: Wort mit aufnehmen (Gruppe)
         # text = re.sub(r"[-–]\s[\n\r]+", '', text)
         text = re.sub(r"[-–­]\s[\n\r]*", '', text)  # id 11: Begriffs- klassifikation, ersetzt auch Gedankenstriche
 
@@ -145,17 +155,13 @@ class LangProcessor:
         return text
 
     @staticmethod
-    def remove_dates(t):
-        text = re.sub(
-            r"\d+.[\s]*(Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|\d\d.)\s*(\d{4})",
-            '', t)
-        # for b in re.finditer(r"\d+.[\s]*(Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|\d\d.)\s*(\d{4})", t):
-        #    pass
-        return text
-
-    @staticmethod
     def split_sents(text, abbrevs):
-
+        '''
+        Split a text into sentences
+        :param text: full text
+        :param abbrevs: dictionary of abbreviations {abbreviation:translation}
+        :return: list of sentences
+        '''
         # sent_tokenizer = nltk.data.load('tokenizers/punkt/german.pickle')
         # sents = sent_tokenizer.tokenize(text)
 
@@ -169,9 +175,15 @@ class LangProcessor:
 
     @staticmethod
     def split_tokens(text):
-        # t = re.sub(r"[\"“”„]", '', text)
+        '''
+        Split a text or sentence into Tokens and remove everything, that is no word
+        The Regex says the following: words should start with a letter and end with a letter. Hyphens, Dots and Slashes in between are allowed
+        :param text: full text or sentence (String)
+        :return: list of tokens
+
+        '''
         # tokens = nltk.word_tokenize(t)
-        # expr = r'''\w+|\$\w[\w|-|/|\.]*|\S+'''
+
         expr = r'''[A-Za-zÄÖÜäöü][a-zäöüß[A-ZÄÖÜa-zäöüß|-|–|/|\.|\'’]*[A-ZÄÖÜa-zäöüß]'''
         tokenizer = RegexpTokenizer(expr)
         tokens = tokenizer.tokenize(text)
@@ -180,6 +192,11 @@ class LangProcessor:
 
     @staticmethod
     def do_pos_tagging(tokens):
+        '''
+        Do Part-of-Speech Tagging. The TIGER corpus is used (tagset STTS)
+        :param tokens: list of tokens
+        :return: list of tuples [(token, postag)]
+        '''
         with open('helpers/nltk_german_classifier_data_tiger.pickle', 'rb') as f:
             tagger = pickle.load(f)
 
@@ -188,6 +205,12 @@ class LangProcessor:
         return postags
 
     def find_compound_verbs(self, postags, words):
+        '''
+        find verbs that consist of 2 parts
+        :param postags: list of postags
+        :param words: list of words
+        :return: words- and postag lists are changed
+        '''
         grammar = r"""
                 CV:
                     {<V.*><.*><PTKVZ>}  # korrekt getaggt
@@ -225,63 +248,22 @@ class LangProcessor:
                         words.remove(appr)
                         postags.remove((appr, apprpos))
 
-    @staticmethod
-    def read_lemmata_from_tiger_corpus(tiger_corpus_file, valid_cols_n=15, col_words=1, col_lemmata=2):
-        lemmata_mapping = {}
-
-        with open(tiger_corpus_file) as f:
-            for line in f:
-                parts = line.split()
-                if len(parts) == valid_cols_n:
-                    w, lemma = parts[col_words], parts[col_lemmata]
-                    if w != lemma and w not in lemmata_mapping and not lemma.startswith('--'):
-                        lemmata_mapping[w] = lemma
-
-        return lemmata_mapping
-
-    def load_lemmata(self, loadnew=False):
-        if loadnew:
-            try:
-                self.lemmata_mapping = self.read_lemmata_from_tiger_corpus('corpora/part_A.conll', 10)
-                self.lemmata_mapping.update(self.read_lemmata_from_tiger_corpus('corpora/part_B.conll', 10))
-                self.lemmata_mapping.update(self.read_lemmata_from_tiger_corpus('corpora/part_C.conll', 10))
-                self.lemmata_mapping = {k: v for k, v in self.lemmata_mapping.items() if v != 'unknown'}
-                self.lemmata_mapping = {k: v for k, v in self.lemmata_mapping.items() if v != '-'}
-
-                # self.lemmata_mapping.update(self.read_lemmata_from_tiger_corpus('corpora/tiger_release_aug07.corr.16012013.conll09'))
-                tiger = self.read_lemmata_from_tiger_corpus('corpora/tiger_release_aug07.corr.16012013.conll09')
-                tiger = {k: v for k, v in tiger.items() if v != '-'}
-                self.lemmata_mapping.update((k, v) for (k, v) in tiger.items() if v)
-
-                own_dict = {}
-                try:
-                    with open('helpers/custom_lemmata.txt') as f:
-                        for line in f:
-                            parts = line.split(';')
-                            if len(parts) == 2:
-                                a, w = parts[0], parts[1]
-                                own_dict[a] = w.strip()
-                    self.lemmata_mapping.update(own_dict)
-                except FileNotFoundError:
-                    print("Custom Lemmata could not be loaded.")
-
-                with open('helpers/lemmata_mapping.pickle', 'wb') as f:
-                    pickle.dump(self.lemmata_mapping, f, protocol=2)
-            except:
-                print("Lemmata could not be loaded.")
-
-        else:
-            with open('helpers/lemmata_mapping.pickle', 'rb') as f:
-                self.lemmata_mapping = pickle.load(f)
 
     def find_lemma(self, w):
+        '''
+        Lemmatization of a token: tries to find a lemma by using different dictionaries
+        First: try to find token in dictionary built from TIGER and SMULTRON corpora
+        Second: try stemming method of hunspell (which uses, in fact, also a dictionary)
+        :param w: token (String)
+        :return: lemma (String)
+        '''
         w_lemma = None
 
         # 1st try: read lemma from mapping
         if self.lemmata_mapping:
             w_lemma = self.lemmata_mapping.get(w, None)
 
-        # 2nd try: Stemming
+        # 2nd try: Stemming... well, not really
         if not w_lemma:
             if self.spellchecker:
                 lemmata_hunspell = self.spellchecker.stem(w)
@@ -295,6 +277,11 @@ class LangProcessor:
         return w_lemma
 
     def correct_typo(self, w):
+        '''
+        Try to correct typos by using hunspell's spellchecker
+        :param w: token (string)
+        :return: corrected token (String) or original if no correction was found or if token is correct
+        '''
         neu_w = w
 
         if self.spellchecker:
@@ -305,24 +292,15 @@ class LangProcessor:
                 if len(suggestions) > 0:
                     neu_w = suggestions[0].decode(self.spellchecker_enc)
 
-        # fallback
-        # if not neu_w:
-        #    neu_w = w
-
         return neu_w
 
-    def load_stopwords(self, stopwords_file):
-        try:
-            with open(stopwords_file) as f:
-                for line in f:
-                    if line is not '':
-                        # print(line)
-                        self.stopwords.append(line.strip().casefold())
-                        # print(stopwords)
-        except:
-            print("Stopword List could not be loaded.")
-
     def find_compound_nouns(self, postags, tokens):
+        '''
+        Try to reassemble nouns, that are compounds (and were possibly separated during hyphen removal)
+        :param postags: list of POS tags
+        :param tokens: list of tokens
+        :return: list of POS tags (token list is in fact also changed)
+        '''
         zus = ''
         removelist = []
         grammar = r"""

@@ -7,6 +7,13 @@ from langprocessor import LangProcessor
 class Indexer:
     @staticmethod
     def get_inverse_index(doc_col):
+        '''
+        Calculates the inverse index of a collection from all token lists (indexliste of each document).
+        For each Token the absolute cf (collection frequency) is given (absolute value)
+        for each token/document the relative tf (term frequency)
+        :param doc_col: dictionary of documents {docid:Documentobject}
+        :return: dictionary containing the inverse index {token: (cf, {docid: tf})}
+        '''
         inv_index = {}
 
         for doc_id in doc_col.keys():
@@ -37,6 +44,13 @@ class Indexer:
 
     @staticmethod
     def get_inverse_posindex(doc_col):
+        '''
+        Calculates the inverse index with positions of a collection from all token lists (indexliste of each document).
+        For each Token the absolute cf (collection frequency) is given (absolute value)
+        for each token/document the relative tf (term frequency)
+        :param doc_col: dictionary of documents {docid:Documentobject}
+        :return: dictionary containing the inverse index {token: (cf, {docid: (tf, [positions])})}
+        '''
         inv_posindex = {}
 
         for doc_id in doc_col.keys():
