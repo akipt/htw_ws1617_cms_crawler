@@ -22,9 +22,9 @@ class Search3:
     def process(argv):
         erg = []
 
-        with open('pickle/invertierter_index.pickle', 'rb') as f:
+        with open('helpers/invertierter_index.pickle', 'rb') as f:
             inv_ind = pickle.load(f)
-        with open('pickle/invertierter_posindex.pickle', 'rb') as f:
+        with open('helpers/invertierter_posindex.pickle', 'rb') as f:
             inv_posind = pickle.load(f)
 
         optlist, args = getopt.getopt(argv, 'bpk:')
