@@ -259,7 +259,7 @@ class LangProcessor:
 
                 own_dict = {}
                 try:
-                    with open('custom_lemmata.txt') as f:
+                    with open('helpers/custom_lemmata.txt') as f:
                         for line in f:
                             parts = line.split(';')
                             if len(parts) == 2:
