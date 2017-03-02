@@ -24,7 +24,7 @@ class LangProcessor:
                                               '/usr/share/hunspell/de_DE.aff')
         self.spellchecker_enc = self.spellchecker.get_dic_encoding()
 
-        self.load_lemmata()
+        self.load_lemmata(True)
 
         self.load_stopwords(stopwords_file)
 
@@ -85,8 +85,9 @@ class LangProcessor:
 
                 # Normalisieren (Kleinschreibung)
                 token = lemma.casefold()
+                print(wort.ljust(20) + '\t' + token)
                 if write_csv:
-                    fobj_out.write(wort + ',\t' + token + '\n')
+                    fobj_out.write(wort + '\t' + token + '\n')
 
                 # Indexliste aufbauen
                 doc_index.append(token)

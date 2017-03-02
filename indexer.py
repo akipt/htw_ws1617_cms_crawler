@@ -68,9 +68,10 @@ if __name__ == "__main__":
     csvfile = "out/word_lemma_mapping.csv"
     write_lemmamapping = True
 
-    print("Start Indexing...")
+    print("Starte Indexing...")
     if write_lemmamapping:
         fobj_out = open(csvfile, "w")
+        fobj_out.write('token\tlemma\n')
         fobj_out.close()
 
     for docid in docs.keys():
