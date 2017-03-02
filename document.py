@@ -6,14 +6,14 @@ class Document:
     title = ''
     text = ''
     indexliste = []
-    abs_tf = {}  # absolute term frequency
-    norm_tf = {}  # augmented term frequency
+    #abs_tf = {}  # absolute term frequency
+    #norm_tf = {}  # augmented term frequency
 
     def __init__(self, title='', text=''):
         self.title = title
         self.text = text
 
-    def calc_term_frequencies(self):
+    '''def calc_term_frequencies(self):
 
         for token in self.indexliste:
             if token in self.abs_tf:
@@ -34,4 +34,4 @@ class Document:
 
     def do_language_processing(self, l=LangProcessor()):  # TODO: überflüssig
         # self.indexliste = [token for token, d in l.get_index(self.text, 0)]
-        self.indexliste = l.get_index(self.text)
+        self.indexliste = l.get_index(self.text)'''
