@@ -77,6 +77,7 @@ class Search3:
 
         if len(optlist) == 0:
             # Freie Suche oder Keyword Search
+            args = list(set(args))  # doppelte Eingaben filtern
             query = reduce(lambda x, y: x + ' ' + y, args)
             query = query.replace('"', '')
             query = query.replace("'", "")
@@ -167,7 +168,7 @@ class Search3:
         These posting lists are then reduced to a list of document IDs
         :param query: String containg the query phrase
         :param inv_posindex: dictionary containing inverse index
-        :return: list of matching document IDs, sorted by document ID
+        :return: list of matching document IDs, sorted by position of phrase appearance
         '''
         l = LangProcessor()
         queryterms = l.get_index(query)
@@ -211,9 +212,13 @@ class Search3:
                 templiste.append(doc_pos_mapping)
         # templiste = [{'d1': {5, 13}, 'd5': {1, 27}}, {'d1': {14}, 'd5': {5, 28}}, {'d1': {33}, 'd5': {3, 7, 29, 44}}]
 
-        phrase_ergebnis = (list(reduce(filter_near, templiste)))
+        #phrase_ergebnis = (list(reduce(filter_near, templiste)))
+        phrase_ergebnis = reduce(filter_near, templiste)
 
-        phrase_ergebnis = sorted(phrase_ergebnis)
+        # umwandeln in Liste und sortieren nach Position
+        phrase_ergebnis = [(k, v) for k, v in phrase_ergebnis.items()]
+        phrase_ergebnis = sorted(phrase_ergebnis, key=lambda el: (el[1], el[0]))
+        phrase_ergebnis = list(map(lambda x: x[0], phrase_ergebnis))
         return phrase_ergebnis
 
 
