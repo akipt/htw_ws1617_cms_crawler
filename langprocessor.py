@@ -34,8 +34,6 @@ class LangProcessor:
         if write_csv:
             fobj_out = open(csvfile, "a")
 
-        # text = self.remove_dates(text)
-
         sents = self.split_sents(text, self.abbrevs)
 
         for sent in sents:
@@ -47,7 +45,7 @@ class LangProcessor:
             postags = self.do_pos_tagging(tokens)
 
             # Bindestrich-Substantive behandeln (Chunking)
-            self.find_compound_nouns(postags, tokens)
+            #self.find_compound_nouns(postags, tokens)
 
             # zusammengesetzte Verben suchen (Chunking)
             self.find_compound_verbs(postags, tokens)
@@ -70,7 +68,7 @@ class LangProcessor:
                         continue
 
                     # Tippfehler korrigieren
-                    corrwort = self.correct_typo(wort)
+                    '''corrwort = self.correct_typo(wort)
                     # wenn Korrektur mehr als 1 Wort ergibt: in Postag-Liste einfügen und einzeln verarbeiten
                     if len(corrwort.split(' ')) > 1:
                         npostags = self.do_pos_tagging(corrwort.split(' '))
@@ -80,7 +78,7 @@ class LangProcessor:
                         continue
 
                     # Lemmatisieren
-                    # lemma = self.find_lemma(corrwort)
+                    lemma = self.find_lemma(corrwort)'''
                     lemma = self.find_lemma(wort)
 
                 # Normalisieren (Kleinschreibung)
@@ -101,7 +99,7 @@ class LangProcessor:
     def remove_abbrev(self, t):
         for abbrev in self.abbrevs:
             t = t.replace(' ' + abbrev.casefold() + ' ', ' ' + self.abbrevs[abbrev].casefold() + ' ')
-            # t = re.sub(r"""\s""")
+
         return t
 
     def load_abbrevs(self, abbrev_file):
@@ -118,10 +116,8 @@ class LangProcessor:
     @staticmethod
     def remove_hyphens(t):
         # Testdatei: Startseite, Satz 7
-        # text = t.strip(' \t\n\r')
 
         # Entferne doppelte Bindestriche
-        # text = t.replace('­­', '-')
         text = re.sub(r"[-–­]{2}", '-', t)
 
         # Entferne unvollständige Kompositionsteile (inkl. 'und')
@@ -145,15 +141,6 @@ class LangProcessor:
         return text
 
     @staticmethod
-    def remove_dates(t):
-        text = re.sub(
-            r"\d+.[\s]*(Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|\d\d.)\s*(\d{4})",
-            '', t)
-        # for b in re.finditer(r"\d+.[\s]*(Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|\d\d.)\s*(\d{4})", t):
-        #    pass
-        return text
-
-    @staticmethod
     def split_sents(text, abbrevs):
 
         # sent_tokenizer = nltk.data.load('tokenizers/punkt/german.pickle')
@@ -169,9 +156,8 @@ class LangProcessor:
 
     @staticmethod
     def split_tokens(text):
-        # t = re.sub(r"[\"“”„]", '', text)
         # tokens = nltk.word_tokenize(t)
-        # expr = r'''\w+|\$\w[\w|-|/|\.]*|\S+'''
+
         expr = r'''[A-Za-zÄÖÜäöü][a-zäöüß[A-ZÄÖÜa-zäöüß|-|–|/|\.|\'’]*[A-ZÄÖÜa-zäöüß]'''
         tokenizer = RegexpTokenizer(expr)
         tokens = tokenizer.tokenize(text)
