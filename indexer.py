@@ -66,15 +66,17 @@ if __name__ == "__main__":
     with open('helpers/docs.pickle', 'rb') as d:
         docs = pickle.load(d)
     csvfile = "out/word_lemma_mapping.csv"
+    write_lemmamapping = True
 
     print("Start Indexing...")
-    fobj_out = open(csvfile, "w")
-    fobj_out.close()
+    if write_lemmamapping:
+        fobj_out = open(csvfile, "w")
+        fobj_out.close()
 
     for docid in docs.keys():
         doc = docs[docid]
         print(docid)
-        doc.indexliste = l.get_index(doc.text, False, csvfile)
+        doc.indexliste = l.get_index(doc.text, write_lemmamapping, csvfile)
 
     inv_index = Indexer.get_inverse_index(docs)
     inv_posindex = Indexer.get_inverse_posindex(docs)
