@@ -267,7 +267,7 @@ class LangProcessor:
         if not w_lemma:
             if self.spellchecker:
                 lemmata_hunspell = self.spellchecker.stem(w)
-                if lemmata_hunspell and not isinstance(lemmata_hunspell, str):
+                if lemmata_hunspell and not isinstance(lemmata_hunspell, str):  # Änderung wegen Problem bei Julius!
                     w_lemma = lemmata_hunspell[-1].decode(self.spellchecker_enc)
 
         # fallback: use original word
