@@ -4,6 +4,8 @@ from tokenlist import TokenList
 from langprocessor import LangProcessor
 from itertools import groupby
 import json
+from math import log
+import locale
 
 
 class Indexer:
@@ -119,9 +121,50 @@ class Indexer:
 
         return mappingdict
 
+    @staticmethod
+    def write_csv(doc_col, inv_index, csv_file="out/out_neu.csv"):
+        docnum = len(doc_col.keys())
+        zeilen = []
+        ii = [(token, cf,pl) for token, (cf,pl) in inv_index.items()]
+        ii = sorted(ii, key=lambda el: (-el[1], el[0]))
+
+        fobj_out = open(csv_file, "w")
+        tf_heading = ''
+        tfidf_heading = ''
+        for doc_id in sorted(doc_col.keys()):
+            tf_heading += ';TF ' + doc_id
+            tfidf_heading += ';TF-IDF ' + doc_id
+        fobj_out.write('TOKEN;Collection Frequency' + tf_heading + ';IDF' + tfidf_heading + '\n')
+
+        for token, cf, pl in ii:
+            zeile = token
+            zeile += ';' + locale.str(cf)
+            df = len(pl)
+            idf = log(docnum / df)
+            tf_zeile = tfidf_zeile = ''
+            for doc_id in sorted(doc_col.keys()):
+                if doc_id in pl:
+                    ntf = pl[doc_id]
+                else:
+                    ntf = 0
+                tf_zeile += ';' + locale.str(ntf)
+                tf_idf = ntf * idf
+                tfidf_zeile += ';' + locale.str(tf_idf)
+            zeile += tf_zeile + ';' + locale.str(idf) + tfidf_zeile
+            zeilen.append(zeile)
+            fobj_out.write(zeile + '\n')
+
+        fobj_out.close()
+        return zeilen
+
+
+
+
 
 if __name__ == "__main__":
     l = LangProcessor()
+    # set to German locale:
+    locale.setlocale(locale.LC_NUMERIC, "de_DE.UTF-8")
     with open('helpers/docs.pickle', 'rb') as d:
         docs = pickle.load(d)
 
@@ -150,7 +193,7 @@ if __name__ == "__main__":
     # json.dumps(['foo', {'bar': ('baz', None, 1.0, 2)}])
     # '["foo", {"bar": ["baz", null, 1.0, 2]}]'
 
-    print ("Calculating absolute and normalized TF")
+    '''print ("Calculating absolute and normalized TF")
     for document in docs.values():
         document.calc_term_frequencies()
     print ("Done")
@@ -158,5 +201,8 @@ if __name__ == "__main__":
     # Todo: Hier erfolgt der Aufruf von TokenList und der Export der CSV-Datei
     Indexer.write_lemma_csv(docs, "out/word_lemma_mapping.csv")
     print ("Calculating IDFs and TF-IDFs and preparing CSV export")
-    my_token_list = TokenList(docs)
+    my_token_list = TokenList(docs)'''
 
+    print("\nCSV Export")
+    Indexer.write_csv(docs, inv_ind)
+    print("\tFertig.")
