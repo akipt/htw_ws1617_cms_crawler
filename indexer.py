@@ -3,6 +3,7 @@ import pickle
 from tokenlist import TokenList
 from langprocessor import LangProcessor
 from itertools import groupby
+import json
 
 
 class Indexer:
@@ -124,16 +125,16 @@ if __name__ == "__main__":
     with open('helpers/docs.pickle', 'rb') as d:
         docs = pickle.load(d)
 
-    '''i = 0
+    i = 0
     tmp = {}
     for k, v in sorted(docs.items()):
         tmp[k] = v
         i += 1
         if i >= 3:
             break
-    docs = tmp'''
+    docs = tmp
 
-    csvfile = "out/word_lemma_mapping.csv"
+    #csvfile = "out/word_lemma_mapping.csv"
 
     print("Starte Indizierung...")
 
@@ -157,5 +158,5 @@ if __name__ == "__main__":
     # Todo: Hier erfolgt der Aufruf von TokenList und der Export der CSV-Datei
     Indexer.write_lemma_csv(docs, "out/word_lemma_mapping.csv")
     print ("Calculating IDFs and TF-IDFs and preparing CSV export")
-    #my_token_list = TokenList(docs)
+    my_token_list = TokenList(docs)
 
