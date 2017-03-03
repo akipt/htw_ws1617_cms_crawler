@@ -68,6 +68,8 @@ class Crawler:
         self.logFolder = os.path.realpath(os.path.dirname(sys.argv[0])) + os.sep + "out"
         self.create_base_folder(self.logFolder)
         self.baseFolder = self.logFolder + os.sep + "html"
+        for filename in os.listdir(self.baseFolder):
+            os.remove(os.path.join(self.baseFolder, filename))
         print('  (Save files in ' + self.baseFolder + ')')
         self.create_base_folder(self.baseFolder)
 
