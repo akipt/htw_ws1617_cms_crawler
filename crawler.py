@@ -361,7 +361,12 @@ if __name__ == "__main__":
     # END_OF_DEBUG
 
     docs = {}
+    # ToDo: Die Menge der Dokumente wird auf Drei begrenzt...nur zum Testen, da es sonst zu lange dauert
+    i = 0
     for pg in page_list:
         docs[pg.fullURL] = Document(souper.get_souped_title(pg.html), souper.get_souped_text(pg.html))
+        i+=1
+        if i>2:
+            break
     with open('helpers/docs.pickle', 'wb') as d:
         pickle.dump(docs, d, protocol=2)

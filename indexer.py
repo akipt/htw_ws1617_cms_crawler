@@ -144,7 +144,13 @@ if __name__ == "__main__":
     # json.dumps(['foo', {'bar': ('baz', None, 1.0, 2)}])
     # '["foo", {"bar": ["baz", null, 1.0, 2]}]'
 
+    print ("Calculating absolute and normalized TF")
+    for document in docs.values():
+        document.calc_term_frequencies()
+    print ("Done")
+
     # Todo: Hier erfolgt der Aufruf von TokenList und der Export der CSV-Datei
+    print ("Calculating IDFs and TF-IDFs and preparing CSV export")
     my_token_list = TokenList(docs)
 
     with open('helpers/invertierter_index.pickle', 'wb') as invf:
