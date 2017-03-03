@@ -1,6 +1,6 @@
 # coding: utf8
 import pickle
-import TokenList
+from tokenlist import TokenList
 from langprocessor import LangProcessor
 from itertools import groupby
 
@@ -123,6 +123,16 @@ if __name__ == "__main__":
     l = LangProcessor()
     with open('helpers/docs.pickle', 'rb') as d:
         docs = pickle.load(d)
+
+    '''i = 0
+    tmp = {}
+    for k, v in sorted(docs.items()):
+        tmp[k] = v
+        i += 1
+        if i >= 3:
+            break
+    docs = tmp'''
+
     csvfile = "out/word_lemma_mapping.csv"
 
     print("Starte Indizierung...")
@@ -130,16 +140,22 @@ if __name__ == "__main__":
     inv_ind = Indexer.get_inverse_index(docs)
     inv_posind = Indexer.get_inverse_posindex(docs)
 
+    with open('helpers/invertierter_index.pickle', 'wb') as invf:
+        pickle.dump(inv_ind, invf, protocol=2)
+    with open('helpers/invertierter_posindex.pickle', 'wb') as invpf:
+        pickle.dump(inv_posind, invpf, protocol=2)
     # Todo: Export des inv. Positionsindexes als JSON
     # import json
     # json.dumps(['foo', {'bar': ('baz', None, 1.0, 2)}])
     # '["foo", {"bar": ["baz", null, 1.0, 2]}]'
 
+    print ("Calculating absolute and normalized TF")
+    for document in docs.values():
+        document.calc_term_frequencies()
+    print ("Done")
+
     # Todo: Hier erfolgt der Aufruf von TokenList und der Export der CSV-Datei
     Indexer.write_lemma_csv(docs, "out/word_lemma_mapping.csv")
-    # my_token_list = TokenList(docs)
+    print ("Calculating IDFs and TF-IDFs and preparing CSV export")
+    #my_token_list = TokenList(docs)
 
-    with open('helpers/invertierter_index.pickle', 'wb') as invf:
-        pickle.dump(inv_ind, invf, protocol=2)
-    with open('helpers/invertierter_posindex.pickle', 'wb') as invpf:
-        pickle.dump(inv_posind, invpf, protocol=2)
