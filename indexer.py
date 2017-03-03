@@ -61,13 +61,13 @@ class Indexer:
             if len(doc.indexliste) == 0:
                 doc.indexliste, doc.wordlemmadict = l.get_index(doc.text)
             # if len(doc.index) == 0:
-            #    doc.index = {k: doc.indexliste.count(k) for k, g in groupby(sorted(doc.indexliste))}
+            #    doc.index = {key: doc.indexliste.count(key) for key, g in groupby(sorted(doc.indexliste))}
             if len(doc.posindex) == 0:
                 posliste = [(k, i) for i, k in enumerate(doc.indexliste)]
                 posliste = sorted(posliste)
-                doc.posindex = {k: [ind for t, ind in g] for k, g in groupby(posliste, lambda x: x[0])}
+                doc.posindex = {k: [i for t, i in g] for k, g in groupby(posliste, lambda x: x[0])}
 
-            # termnum = sum(len(v) for v in doc.posindex.values())
+            # termnum = sum(len(val) for val in doc.posindex.values())
             termnum = len(doc.indexliste)
             maxtf = max([len(v) for v in doc.posindex.values()])
             for token in doc.posindex:
@@ -88,11 +88,10 @@ class Indexer:
         return inv_posindex
 
     @staticmethod
-    def write_lemma_csv(doc_col, csv_file="out/word_lemma_mapping.csv"):
+    def get_lemma_mapping(doc_col):
         '''
         Retrieves the word-lemma mappings of each document, merges them and writes them into a csv file (sorted alphabetically)
         :param doc_col: dictionary of documents {docid:Documentobject}
-        :param csv_file: path to csv file with word-lemma mapping
         :return: dictionary with word-lemma mapping for all documents
         '''
         mappingdict = {}
@@ -110,20 +109,26 @@ class Indexer:
                     raise ValueError('Error: Different lemmata assigned to ' + k + ' (' + v1 + ', ' + v2 + ')')
             mappingdict.update((k, v) for (k, v) in doc.wordlemmadict.items() if v)
 
-        try:
-            fobj_out = open(csv_file, "w")
-            fobj_out.write('TOKEN\;LEMMA\n')
-            for k, v in sorted(mappingdict.items()):
-                fobj_out.write(k + ';' + v + '\n')
-            fobj_out.close()
-        except:
-            print(csv_file + ' could not be written.')
-
         return mappingdict
 
     @staticmethod
+    def get_inverse_lemma_mapping(doc_col):
+        lemma_mapping = Indexer.get_lemma_mapping(doc_col)
+        ilm = {}
+        for token,lemma in lemma_mapping.items():
+            if lemma in ilm:
+                ilm[lemma].append(token)
+            else:
+                ilm[lemma] = [token]
+        return ilm
+
+
+    @staticmethod
     def write_csv(doc_col, inv_index, csv_file="out/out_neu.csv"):
+        # set to German locale:
+        locale.setlocale(locale.LC_NUMERIC, "de_DE.UTF-8")
         docnum = len(doc_col.keys())
+        inverse_lemma_mapping = Indexer.get_inverse_lemma_mapping(doc_col)
         zeilen = []
         ii = [(token, cf,pl) for token, (cf,pl) in inv_index.items()]
         ii = sorted(ii, key=lambda el: (-el[1], el[0]))
@@ -134,25 +139,28 @@ class Indexer:
         for doc_id in sorted(doc_col.keys()):
             tf_heading += ';TF ' + doc_id
             tfidf_heading += ';TF-IDF ' + doc_id
-        fobj_out.write('TOKEN;Collection Frequency' + tf_heading + ';IDF' + tfidf_heading + '\n')
+        fobj_out.write('TOKEN;LEMMA;Collection Frequency' + tf_heading + ';IDF' + tfidf_heading + '\n')
 
-        for token, cf, pl in ii:
-            zeile = token
-            zeile += ';' + locale.str(cf)
-            df = len(pl)
-            idf = log(docnum / df)
-            tf_zeile = tfidf_zeile = ''
-            for doc_id in sorted(doc_col.keys()):
-                if doc_id in pl:
-                    ntf = pl[doc_id]
-                else:
-                    ntf = 0
-                tf_zeile += ';' + locale.str(ntf)
-                tf_idf = ntf * idf
-                tfidf_zeile += ';' + locale.str(tf_idf)
-            zeile += tf_zeile + ';' + locale.str(idf) + tfidf_zeile
-            zeilen.append(zeile)
-            fobj_out.write(zeile + '\n')
+        for token, cf, pl in ii:    # sortiert nach cf
+            originalwords = inverse_lemma_mapping[token]
+            for w in originalwords:
+                zeile = w
+                zeile += ';' + token
+                zeile += ';' + locale.str(cf)
+                df = len(pl)
+                idf = log(docnum / df)
+                tf_zeile = tfidf_zeile = ''
+                for doc_id in sorted(doc_col.keys()):
+                    if doc_id in pl:
+                        ntf = pl[doc_id]
+                    else:
+                        ntf = 0
+                    tf_zeile += ';' + locale.str(ntf)
+                    tf_idf = ntf * idf
+                    tfidf_zeile += ';' + locale.str(tf_idf)
+                zeile += tf_zeile + ';' + locale.str(idf) + tfidf_zeile
+                zeilen.append(zeile)
+                fobj_out.write(zeile + '\n')
 
         fobj_out.close()
         return zeilen
@@ -163,17 +171,15 @@ class Indexer:
 
 if __name__ == "__main__":
     l = LangProcessor()
-    # set to German locale:
-    locale.setlocale(locale.LC_NUMERIC, "de_DE.UTF-8")
     with open('helpers/docs.pickle', 'rb') as d:
         docs = pickle.load(d)
 
-    i = 0
+    ind = 0
     tmp = {}
-    for k, v in sorted(docs.items()):
-        tmp[k] = v
-        i += 1
-        if i >= 3:
+    for key, val in sorted(docs.items()):
+        tmp[key] = val
+        ind += 1
+        if ind >= 3:
             break
     docs = tmp
 
