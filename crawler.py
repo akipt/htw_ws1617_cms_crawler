@@ -65,8 +65,10 @@ class Crawler:
         # old-Version was to create a name randomized temporary folder
         # self.baseFolder = mkdtemp(self.get_time_stamp_wob(), 'crawler')
         # now the output directory equals the script directory plus "out"
-        self.baseFolder = os.path.realpath(os.path.dirname(sys.argv[0])) + os.sep + "out"
-        print(self.baseFolder)
+        self.logFolder = os.path.realpath(os.path.dirname(sys.argv[0])) + os.sep + "out"
+        self.create_base_folder(self.logFolder)
+        self.baseFolder = self.logFolder + os.sep + "html"
+        print('  (Save files in ' + self.baseFolder + ')')
         self.create_base_folder(self.baseFolder)
 
         # load robots.txt file
@@ -78,7 +80,7 @@ class Crawler:
 
     @property
     def do_crawling(self):
-        f = open(os.path.join(self.baseFolder, "log.txt"), 'wt')
+        f = open(os.path.join(self.logFolder, "log.txt"), 'wt')
         writer = csv.writer(f)
 
         while self.found_links:
