@@ -177,11 +177,10 @@ class Crawler:
 
             # ignore one website, where only one image is displayed
             # indicator is the html title tag
-            if "Image" not in souper.get_souped_title(page.html):
-                writer.writerow((page.fullURL, page.fileName, self.get_time_stamp()))
-                self.pageList.append(page)
-                print('    Extracting Links...')
-                self.extract_links(page.html, parsed_url)
+            writer.writerow((self.get_time_stamp(), page.fullURL, page.fileName))
+            self.pageList.append(page)
+            print('    Extracting Links...')
+            self.extract_links(page.html, parsed_url)
 
         f.close()
         return self.pageList
@@ -366,6 +365,9 @@ if __name__ == "__main__":
 
     docs = {}
     for pg in page_list:
-        docs[pg.fullURL] = Document(souper.get_souped_title(pg.html), souper.get_souped_text(pg.html))
+        title = souper.get_souped_title(pg.html)
+        txt = souper.get_souped_text(pg.html)
+        if len(txt) > 0:
+            docs[pg.fullURL] = Document(title, txt)
     with open('helpers/docs.pickle', 'wb') as d:
         pickle.dump(docs, d, protocol=2)
