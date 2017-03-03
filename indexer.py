@@ -125,6 +125,15 @@ class Indexer:
 
     @staticmethod
     def write_csv(doc_col, inv_index, csv_file="out/out_neu.csv"):
+        '''
+        Writes a csv file with columns
+        [token, lemma, collection frequency, tf (doc1), ..., tf (docn), idf, tf-idf (doc1), ..., tf-idf (docn)]
+        All numeric values belong to the lemma
+        :param doc_col: dictionary of documents {docid:Documentobject}
+        :param inv_index: dictionary containing the inverted index
+        :param csv_file: path to csv file
+        :return: String with all the data written to file
+        '''
         # set to German locale:
         locale.setlocale(locale.LC_NUMERIC, "de_DE.UTF-8")
         docnum = len(doc_col.keys())
@@ -166,38 +175,37 @@ class Indexer:
         return zeilen
 
 
-
-
-
 if __name__ == "__main__":
     l = LangProcessor()
     with open('helpers/docs.pickle', 'rb') as d:
         docs = pickle.load(d)
 
-    ind = 0
+    '''ind = 0
     tmp = {}
     for key, val in sorted(docs.items()):
         tmp[key] = val
         ind += 1
         if ind >= 3:
             break
-    docs = tmp
-
-    #csvfile = "out/word_lemma_mapping.csv"
+    docs = tmp'''
 
     print("Starte Indizierung...")
 
     inv_ind = Indexer.get_inverse_index(docs)
     inv_posind = Indexer.get_inverse_posindex(docs)
 
+    print("\n Schreibe Invertierten Index in Datei...")
     with open('helpers/invertierter_index.pickle', 'wb') as invf:
         pickle.dump(inv_ind, invf, protocol=2)
     with open('helpers/invertierter_posindex.pickle', 'wb') as invpf:
         pickle.dump(inv_posind, invpf, protocol=2)
+
     # Todo: Export des inv. Positionsindexes als JSON
-    # import json
-    # json.dumps(['foo', {'bar': ('baz', None, 1.0, 2)}])
+    r = json.dumps(inv_posind, indent=4)  # json.dumps(['foo', {'bar': ('baz', None, 1.0, 2)}])
     # '["foo", {"bar": ["baz", null, 1.0, 2]}]'
+    file_out = open("out/inv_posindex.json", "w")
+    file_out.write(str(r))
+    file_out.close()
 
     '''print ("Calculating absolute and normalized TF")
     for document in docs.values():
@@ -209,6 +217,6 @@ if __name__ == "__main__":
     print ("Calculating IDFs and TF-IDFs and preparing CSV export")
     my_token_list = TokenList(docs)'''
 
-    print("\nCSV Export")
+    print("\nCSV Export...")
     Indexer.write_csv(docs, inv_ind)
     print("\tFertig.")
