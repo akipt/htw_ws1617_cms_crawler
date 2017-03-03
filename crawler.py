@@ -166,8 +166,6 @@ class Crawler:
             # if everything is okay: build Page object and start extracting links
             page = Page()
             page.html = pagecontent
-            timestamp1 = header['Date']
-            timestamp2 = self.get_time_stamp()
             page.timestampVisited = self.get_time_stamp()
             page.folderName = self.baseFolder
             page.baseURL = self.base_url
@@ -190,7 +188,6 @@ class Crawler:
 
         for link in links.find_all('a'):
 
-            linktitle = link.string
             new_url = link['href']
             scheme, host, path, query, fragment = urlsplit(new_url)
 

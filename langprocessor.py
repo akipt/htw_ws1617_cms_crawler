@@ -38,7 +38,6 @@ class LangProcessor:
         '''
         The main NLP method: process a document and construct the token index
         :param text: a text
-        :param wordlemmadict: dictionary, in which the mapping word -> lemma will be written
         :return: list of all the tokens of the text (sorted alphabetically) - may contain duplicates
         '''
         doc_index = []
@@ -83,8 +82,8 @@ class LangProcessor:
                     # wenn Korrektur mehr als 1 Wort ergibt: in Postag-Liste einfügen und einzeln verarbeiten
                     if len(corrwort.split(' ')) > 1:
                         npostags = self.do_pos_tagging(corrwort.split(' '))
-                        for i, newpostag in enumerate(npostags):
-                            position = ind + i + 1
+                        for ind, newpostag in enumerate(npostags):
+                            position = ind + ind + 1
                             postags.insert(position, newpostag)
                         continue
 

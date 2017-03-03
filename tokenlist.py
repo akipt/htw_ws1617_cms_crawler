@@ -10,7 +10,6 @@ import operator
 
 
 class TokenList:
-
     abs_tf = {}  # absolute term frequency
     norm_tf = {}  # augmented term frequency
     idf = {}  # inverse document frequency
@@ -30,8 +29,8 @@ class TokenList:
         for document in self.documents.values():
             for key, value in document.norm_tf.items():
                 self.norm_tf[key] = value
-        print (self.norm_tf)
-        print ("Klappt")
+        print(self.norm_tf)
+        print("Klappt")
 
     def collect_abs_tf(self):
         for document in self.documents.values():
@@ -42,7 +41,8 @@ class TokenList:
 
     def calc_inverse_document_frequencies(self):
         for token in self.abs_tf.keys():
-            self.idf[token] = log(len(self.documents) / self.abs_tf[token]) # das ist falsch! es muss durch df geteilt werden, nicht durch abs_tf!
+            self.idf[token] = log(len(self.documents) / self.abs_tf[
+                token])  # das ist falsch! es muss durch df geteilt werden, nicht durch abs_tf!
         print(self.idf)
 
     def calc_term_frequencies_inverse_document_frequencies(self):
@@ -50,8 +50,8 @@ class TokenList:
             for document in self.documents.values():
                 self.tf_idf[token] = self.norm_tf[token] * self.idf[token]
         print(self.tf_idf)
-    def export_csv(self):
 
+    def export_csv(self):
 
         # sort an dictionary by value in descending order and return as list
         sorted_idf_list = sorted(self.idf.items(), key=operator.itemgetter(1), reverse=True)
@@ -73,10 +73,9 @@ class TokenList:
         column_titles += ("(idf)" + sep)
 
         for document in self.documents.values():
-            column_titles += (document.title + " (absolute tf)" + sep) # column titles tf_abs
-            column_titles += (document.title + " (normalized tf)" + sep) # column titles tf_abs
-            column_titles += (document.title + " (tf-idf)" + sep) # column titles tfidf
-
+            column_titles += (document.title + " (absolute tf)" + sep)  # column titles tf_abs
+            column_titles += (document.title + " (normalized tf)" + sep)  # column titles tf_abs
+            column_titles += (document.title + " (tf-idf)" + sep)  # column titles tfidf
 
         column_titles += "\n"
 
@@ -87,4 +86,4 @@ class TokenList:
         # TODO: Der Inhalt fehlt noch!
         out.close()
 
-        print ("Export of TF-CSV done.")
+        print("Export of TF-CSV done.")

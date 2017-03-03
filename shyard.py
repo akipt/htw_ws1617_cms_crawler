@@ -4,6 +4,7 @@ import sys
 from collections import namedtuple
 
 
+# noinspection PyTypeChecker
 class ShYard:
     OpInfo = namedtuple('OpInfo', 'prec assoc')
     L, R = 'Left Right'.split()
