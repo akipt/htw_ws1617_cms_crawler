@@ -264,11 +264,12 @@ class LangProcessor:
             w_lemma = self.lemmata_mapping.get(w, None)
 
         # 2nd try: Stemming... well, not really
-        if not w_lemma:
+        '''if not w_lemma:
             if self.spellchecker:
                 lemmata_hunspell = self.spellchecker.stem(w)
                 if lemmata_hunspell and not isinstance(lemmata_hunspell, str):  # Änderung wegen Problem bei Julius!
                     w_lemma = lemmata_hunspell[-1].decode(self.spellchecker_enc)
+        '''
 
         # fallback: use original word
         if not w_lemma:
