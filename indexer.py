@@ -56,8 +56,7 @@ class Indexer:
         '''
         inv_posindex = {}
 
-        for doc_id in doc_col.keys():
-            doc = doc_col[doc_id]
+        for doc_id,doc in doc_col.items():
             if len(doc.indexliste) == 0:
                 doc.indexliste, doc.wordlemmadict = l.get_index(doc.text)
             # if len(doc.index) == 0:
@@ -76,7 +75,7 @@ class Indexer:
                 norm_tf = abs_tf / maxtf  # normalisierte termfrequenz
 
                 if token in inv_posindex:
-                    colfreq, postinglist = inv_posindex[token]
+                    colfreq, pl = inv_posindex[token]
                 else:
                     colfreq = 0
                     pl = {}
