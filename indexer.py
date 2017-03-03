@@ -88,38 +88,25 @@ class Indexer:
         return inv_posindex
 
     @staticmethod
-    def get_lemma_mapping(doc_col):
+    def get_inverse_lemma_mapping(doc_col):
         '''
-        Retrieves the word-lemma mappings of each document, merges them and writes them into a csv file (sorted alphabetically)
+        Retrieves the word-lemma mappings of each document and constructs an (inverse) lemma-word-mapping
         :param doc_col: dictionary of documents {docid:Documentobject}
-        :return: dictionary with word-lemma mapping for all documents
+        :return: dictionary with list of original words of each lemma
         '''
-        mappingdict = {}
+        ilm = {}
+
         for doc_id in doc_col.keys():
             doc = doc_col[doc_id]
             if len(doc.wordlemmadict) == 0 or len(doc.indexliste) == 0:
                 doc.indexliste, doc.wordlemmadict = l.get_index(doc.text)
 
-            gesdict_set = set(mappingdict)
-            docdict_set = set(doc.wordlemmadict)
-            for k in gesdict_set.intersection(docdict_set):
-                if mappingdict[k] != doc.wordlemmadict[k]:
-                    v1 = mappingdict[k]
-                    v2 = doc.wordlemmadict[k]
-                    raise ValueError('Error: Different lemmata assigned to ' + k + ' (' + v1 + ', ' + v2 + ')')
-            mappingdict.update((k, v) for (k, v) in doc.wordlemmadict.items() if v)
-
-        return mappingdict
-
-    @staticmethod
-    def get_inverse_lemma_mapping(doc_col):
-        lemma_mapping = Indexer.get_lemma_mapping(doc_col)
-        ilm = {}
-        for token,lemma in lemma_mapping.items():
-            if lemma in ilm:
-                ilm[lemma].append(token)
-            else:
-                ilm[lemma] = [token]
+            for token,lemma in doc.wordlemmadict.items():
+                if lemma in ilm:
+                    if token not in ilm[lemma]:
+                        ilm[lemma].append(token)
+                else:
+                    ilm[lemma] = [token]
         return ilm
 
 
