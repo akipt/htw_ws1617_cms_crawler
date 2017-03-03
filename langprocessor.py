@@ -34,18 +34,16 @@ class LangProcessor:
 
         self.stopwords = loadhelper.load_stopwords(stopwords_file)
 
-    def get_index(self, text, write_csv=True, csvfile='out/word_lemma_mapping.csv'):
+    def get_index(self, text):
         '''
         The main NLP method: process a document and construct the token index
         :param text: a text
-        :param write_csv: True, if csv containing tokens and their lemmata should be written
-        :param csvfile: path to token-lemma-csv (only if write_csv is true)
+        :param wordlemmadict: dictionary, in which the mapping word -> lemma will be written
         :return: list of all the tokens of the text (sorted alphabetically) - may contain duplicates
         '''
         doc_index = []
+        wordlemmadict = {}
         text = self.remove_abbrev(text, self.abbrevs)
-        if write_csv:
-            fobj_out = open(csvfile, "a")
 
         sents = self.split_sents(text, self.abbrevs)
 
@@ -71,8 +69,8 @@ class LangProcessor:
                     continue
 
                 # Namen werden nicht geprüft
-                if pos == 'NE':
-                    lemma = wort
+                #if pos == 'NE':
+                #    lemma = wort
 
                 # alle anderen Wörter verarbeiten
                 else:
@@ -97,15 +95,17 @@ class LangProcessor:
                 # Normalisieren (Kleinschreibung)
                 token = lemma.casefold()
                 #print(wort.ljust(20) + '\t' + token)
-                if write_csv:
-                    # noinspection PyUnboundLocalVariable
-                    fobj_out.write(wort + '\t' + token + '\n')
+
+                if wort in wordlemmadict:
+                    if token != wordlemmadict[wort]:
+                        fehler = 'Uneindeutige Lemma-Zuordnung für ' + wort + '('+wordlemmadict[wort]+', '+token+')'
+                        raise ValueError(fehler)
+                wordlemmadict[wort] = token
 
                 # Indexliste aufbauen
                 doc_index.append(token)
-        if write_csv:
-            fobj_out.close()
-        return doc_index
+
+        return doc_index, wordlemmadict
 
     ##################################### Hilfsmethoden ##################################
 

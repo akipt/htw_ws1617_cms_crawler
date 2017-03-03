@@ -6,7 +6,9 @@ class Document:
     title = ''
     text = ''
     indexliste = []
+    wordlemmadict = {}
     index = {}
+    posindex = {}
     abs_tf = {}  # absolute term frequency
     norm_tf = {}  # augmented term frequency
 
