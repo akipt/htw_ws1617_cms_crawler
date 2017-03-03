@@ -6,6 +6,7 @@ class Document:
     title = ''
     text = ''
     indexliste = []
+    index = {}
     abs_tf = {}  # absolute term frequency
     rel_tf = {}  # augmented term frequency
 

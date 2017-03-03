@@ -2,6 +2,7 @@
 import pickle
 import TokenList
 from langprocessor import LangProcessor
+from itertools import groupby
 
 
 class Indexer:
@@ -75,6 +76,23 @@ class Indexer:
 
         return inv_posindex
 
+    @staticmethod
+    def get_index(doc_col):
+        index = {}
+        for doc_id in doc_col.keys():
+            doc = docs[doc_id]
+            print(doc_id)
+            indexliste = l.get_index(doc.text)
+
+            index2 = {k: indexliste.count(k) for k,g in groupby(indexliste)}
+            #index3 = {k: sum(1 for _ in g) for k, g in groupby(indexliste)}
+            doc.index = index2
+
+            index[doc_id] = index2
+        return index
+
+
+
 
 if __name__ == "__main__":
     l = LangProcessor()
@@ -88,6 +106,8 @@ if __name__ == "__main__":
         fobj_out = open(csvfile, "w")
         fobj_out.write('token\tlemma\n')
         fobj_out.close()
+
+    #Indexer.get_index(docs)
 
     for docid in docs.keys():
         doc = docs[docid]
