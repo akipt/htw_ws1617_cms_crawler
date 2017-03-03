@@ -111,7 +111,7 @@ class Search3:
         st = Stack()
         for term in query_postfix:
             if term not in ['AND', 'OR', 'NOT']:
-                token = l.get_index(term)[0]
+                token = l.get_index(term)[0][0]
                 if token in inv_ind:
                     docs = inv_ind[token][1]
                 else:
@@ -146,7 +146,7 @@ class Search3:
         '''
         l = LangProcessor()
         docids = set(doc for d, docs in inv_index.values() for doc in docs)
-        queryterms = l.get_index(query)
+        queryterms = l.get_index(query)[0]
         vec_ergebnis = []
         for docid in docids:
             score = get_score(queryterms, docid, len(docids), inv_index)
@@ -171,7 +171,7 @@ class Search3:
         :return: list of matching document IDs, sorted by position of phrase appearance
         '''
         l = LangProcessor()
-        queryterms = l.get_index(query)
+        queryterms = l.get_index(query)[0]
         templiste = []
 
         def filter_near(s1, s2):
@@ -198,6 +198,9 @@ class Search3:
 
         relevant_doc_ids = reduce(lambda x, y: x & y,
                                   [set(inv_posindex[k][1].keys()) for k in queryterms if k in inv_posindex])
+
+        if len(relevant_doc_ids) == 0:
+            return []
 
         for word in queryterms:
             if word not in inv_posindex.keys():  # es müssen alle Wörter der Phrase enthalten sein
