@@ -8,6 +8,7 @@
 from math import log
 import csv
 
+
 class TokenList:
 
     abs_tf = {}  # absolute term frequency
@@ -25,12 +26,12 @@ class TokenList:
         self.calc_term_frequencies_inverse_document_frequencies()
 
     def collect_norm_tf(self):
-        for document in self.documents:
-            for token in document.norm_tf.keys():
+        for document in self.documents.values():
+            for token in document.norm_tf.values():
                 self.norm_tf[token][document.title] = document.norm_tf[token]
 
     def collect_abs_tf(self):
-        for document in self.documents:
+        for document in self.documents.values():
             for token in document.abs_tf.keys():
                 self.abs_tf[token][document.title] = document.abs_tf[token]
 
@@ -40,7 +41,7 @@ class TokenList:
 
     def calc_term_frequencies_inverse_document_frequencies(self):
         for token in self.abs_tf.keys():
-            for document in self.documents:
+            for document in self.documents.values():
                 self.tf_idf[token][document.title] = self.norm_tf[token][document.title] * self.idf[token]
 
     def export_csv(self):

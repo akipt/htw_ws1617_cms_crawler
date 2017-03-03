@@ -1,6 +1,6 @@
 # coding: utf8
 import pickle
-import TokenList
+from tokenlist import TokenList
 from langprocessor import LangProcessor
 from itertools import groupby
 
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     # '["foo", {"bar": ["baz", null, 1.0, 2]}]'
 
     # Todo: Hier erfolgt der Aufruf von TokenList und der Export der CSV-Datei
-    #my_token_list = TokenList(docs)
+    my_token_list = TokenList(docs)
 
     with open('helpers/invertierter_index.pickle', 'wb') as invf:
         pickle.dump(inv_ind, invf, protocol=2)
