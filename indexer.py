@@ -112,9 +112,9 @@ class Indexer:
 
         try:
             fobj_out = open(csv_file, "w")
-            fobj_out.write('TOKEN\tLEMMA\n')
+            fobj_out.write('TOKEN\;LEMMA\n')
             for k, v in sorted(mappingdict.items()):
-                fobj_out.write(k + '\t' + v + '\n')
+                fobj_out.write(k + ';' + v + '\n')
             fobj_out.close()
         except:
             print(csv_file + ' could not be written.')
