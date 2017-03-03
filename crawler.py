@@ -171,11 +171,13 @@ class Crawler:
             page.fileName = self.get_and_save_file(url)
             self.visited_links.add(url)
 
-            writer.writerow((page.fullURL, page.fileName, self.get_time_stamp()))
-            self.pageList.append(page)
-
-            print('    Extracting Links...')
-            self.extract_links(page.html, parsed_url)
+            # ignore one website, where only one image is displayed
+            # indicator is the html title tag
+            if "Image" not in souper.get_souped_title(page.html):
+                writer.writerow((page.fullURL, page.fileName, self.get_time_stamp()))
+                self.pageList.append(page)
+                print('    Extracting Links...')
+                self.extract_links(page.html, parsed_url)
 
         f.close()
         return self.pageList
