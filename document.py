@@ -7,7 +7,7 @@ class Document:
     text = ''
     indexliste = []
     abs_tf = {}  # absolute term frequency
-    rel_tf = {}  # augmented term frequency
+    norm_tf = {}  # augmented term frequency
 
     def __init__(self, title='', text=''):
         self.title = title
@@ -21,17 +21,15 @@ class Document:
             else:
                 self.abs_tf[token] = 1
 
+        # augmented term frequency
+        maximum_term_count_in_document = max(self.abs_tf.values())
+        for token in self.abs_tf:
+            self.norm_tf[token] = self.abs_tf[token] / maximum_term_count_in_document
+
+        ''' # relative token frequence
+
         termcount = len(self.indexliste)
         for term, freq in zip(self.abs_tf.keys(), self.abs_tf.values()):
             f = freq / termcount
             self.rel_tf[term] = f
-
-    '''def calc_weight(self, token, idf):  # TODO: überflüssig?
-        tf = self.rel_tf[token]
-        self.tf_idf[token] = tf * idf
-
-    def do_language_processing(self, l=LangProcessor()):  # TODO: überflüssig
-        # self.indexliste = [token for token, d in l.get_index(self.text, 0)]
-
-        self.indexliste = l.get_index(self.text)
-    '''
+        '''
