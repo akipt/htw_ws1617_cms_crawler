@@ -6,8 +6,9 @@ from itertools import groupby
 
 
 class Indexer:
+
     @staticmethod
-    def get_inverse_index(doc_col):
+    def get_inverse_index_alt(doc_col):
         '''
         Calculates the inverse index of a collection from all token lists (indexliste of each document).
         For each Token the absolute cf (collection frequency) is given (absolute value)
@@ -18,22 +19,22 @@ class Indexer:
         inv_index = {}
 
         for doc_id in doc_col.keys():
-            # docnum = len(doc_col)
+            docnum = len(doc_col)
             termnum = len(doc_col[doc_id].indexliste)
             for token in doc_col[doc_id].indexliste:
                 if token in inv_index:
                     colfreq, pl = inv_index[token]
-                    #     colfreq += 1
-                    #     if doc_id in pl:
-                    #         pl[doc_id] += 1
-                    #     else:
-                    #         pl[doc_id] = 1
-                    # else:
-                    #     colfreq = 1
-                    #     pl = {doc_id: 1}
-                    colfreq += 1  # absolute termfrequenz in collection
+                    '''colfreq += 1
                     if doc_id in pl:
-                        pl[doc_id] += (1 / termnum)  # relative termfrequenz
+                        pl[doc_id] += 1
+                    else:
+                        pl[doc_id] = 1
+                else:
+                    colfreq = 1
+                    pl = {doc_id: 1}'''
+                    colfreq += 1   #absolute termfrequenz in collection
+                    if doc_id in pl:
+                        pl[doc_id] += (1 / termnum)   #relative termfrequenz
                     else:
                         pl[doc_id] = (1 / termnum)
                 else:
@@ -43,19 +44,58 @@ class Indexer:
 
         return inv_index
 
+
+    @staticmethod
+    def get_inverse_index(doc_col):
+        '''
+        Calculates the inverse index of a collection from all token lists (indexliste of each document).
+        For each Token the absolute cf (collection frequency) is given and
+        for each token/document the normalized tf (term frequency) is given
+        :param doc_col: dictionary of documents {docid:Documentobject}
+        :return: dictionary containing the inverse index {token: (cf, {docid: tf})}
+        '''
+        inv_index = {}
+
+        for doc_id in doc_col.keys():
+            print('\tIndiziere ' + doc_id)
+            doc = doc_col[doc_id]
+            if len(doc.indexliste) == 0:
+                doc.indexliste = l.get_index(doc.text)
+            if len(doc.index) == 0:
+                doc.index = {k: doc.indexliste.count(k) for k, g in groupby(doc.indexliste)}
+            termnum = sum(doc.index.values())
+            maxtf = max(doc.index.values())
+            for token in doc.index:
+                abs_tf = doc.index[token]   # absolute termfrequenz in collection
+                rel_tf = abs_tf / termnum   # relative termfrequenz
+                norm_tf = abs_tf / maxtf    # normalisierte termfrequenz
+                if token in inv_index:
+                    colfreq, pl = inv_index[token]
+                else:
+                    colfreq = 0
+                    pl = {}
+                colfreq += abs_tf
+                pl[doc_id] = norm_tf
+                inv_index[token] = (colfreq, pl)
+
+        return inv_index
+
     @staticmethod
     def get_inverse_posindex(doc_col):
         '''
         Calculates the inverse index with positions of a collection from all token lists (indexliste of each document).
-        For each Token the absolute cf (collection frequency) is given (absolute value)
-        for each token/document the relative tf (term frequency)
+        For each Token the absolute cf (collection frequency) and
+        for each token/document the relative tf (term frequency) is given
         :param doc_col: dictionary of documents {docid:Documentobject}
         :return: dictionary containing the inverse index {token: (cf, {docid: (tf, [positions])})}
         '''
         inv_posindex = {}
 
         for doc_id in doc_col.keys():
-            termnum = len(doc_col[doc_id].indexliste)
+            doc = doc_col[doc_id]
+            if len(doc.indexliste) == 0:
+                doc.indexliste = l.get_index(doc.text)
+            termnum = len(doc.indexliste)
             for i, token in enumerate(doc_col[doc_id].indexliste):
                 if token in inv_posindex:
                     colfreq, postinglist = inv_posindex[token]
@@ -76,22 +116,6 @@ class Indexer:
 
         return inv_posindex
 
-    @staticmethod
-    def get_index(doc_col):
-        index = {}
-        for doc_id in doc_col.keys():
-            doc = docs[doc_id]
-            print(doc_id)
-            indexliste = l.get_index(doc.text)
-
-            index2 = {k: indexliste.count(k) for k,g in groupby(indexliste)}
-            #index3 = {k: sum(1 for _ in g) for k, g in groupby(indexliste)}
-            doc.index = index2
-
-            index[doc_id] = index2
-        return index
-
-
 
 
 if __name__ == "__main__":
@@ -101,18 +125,16 @@ if __name__ == "__main__":
     csvfile = "out/word_lemma_mapping.csv"
     write_lemmamapping = True
 
-    print("Starte Indexing...")
+    print("Starte Indizierung...")
     if write_lemmamapping:
         fobj_out = open(csvfile, "w")
         fobj_out.write('token\tlemma\n')
         fobj_out.close()
 
-    #Indexer.get_index(docs)
-
-    for docid in docs.keys():
+    '''for docid in docs.keys():
         doc = docs[docid]
         print(docid)
-        doc.indexliste = l.get_index(doc.text, write_lemmamapping, csvfile)
+        doc.indexliste = l.get_index(doc.text, write_lemmamapping, csvfile)'''
 
     inv_ind = Indexer.get_inverse_index(docs)
     inv_posind = Indexer.get_inverse_posindex(docs)
@@ -129,3 +151,4 @@ if __name__ == "__main__":
         pickle.dump(inv_ind, invf, protocol=2)
     with open('helpers/invertierter_posindex.pickle', 'wb') as invpf:
         pickle.dump(inv_posind, invpf, protocol=2)
+
