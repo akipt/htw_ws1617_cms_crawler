@@ -29,7 +29,7 @@ class TokenList:
     def collect_norm_tf(self):
         for document in self.documents.values():
             for key, value in document.norm_tf.items():
-                self.norm_tf[key][document.title] = value
+                self.norm_tf[key] = value
         print (self.norm_tf)
         print ("Klappt")
 
@@ -37,18 +37,18 @@ class TokenList:
         for document in self.documents.values():
 
             for token in document.abs_tf.keys():
-                self.abs_tf[token][document.title] = document.abs_tf[token]
+                self.abs_tf[token] = document.abs_tf[token]
         print(self.abs_tf)
 
     def calc_inverse_document_frequencies(self):
         for token in self.abs_tf.keys():
-            self.idf[token] = log(len(self.documents) / len(self.abs_tf[token]))
+            self.idf[token] = log(len(self.documents) / self.abs_tf[token]) # das ist falsch! es muss durch df geteilt werden, nicht durch abs_tf!
         print(self.idf)
 
     def calc_term_frequencies_inverse_document_frequencies(self):
         for token in self.abs_tf.keys():
             for document in self.documents.values():
-                self.tf_idf[token][document.title] = self.norm_tf[token][document.title] * self.idf[token]
+                self.tf_idf[token] = self.norm_tf[token] * self.idf[token]
         print(self.tf_idf)
     def export_csv(self):
 
@@ -84,6 +84,7 @@ class TokenList:
 
         out.write(column_titles)
         out.write('\n')
+        # TODO: Der Inhalt fehlt noch!
         out.close()
 
         print ("Export of TF-CSV done.")
