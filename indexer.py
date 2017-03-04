@@ -8,6 +8,7 @@ from math import log
 import locale
 
 
+# noinspection PySingleQuotedDocstring
 class Indexer:
     @staticmethod
     def get_inverse_index(doc_col):
@@ -56,7 +57,7 @@ class Indexer:
         '''
         inv_posindex = {}
 
-        for doc_id,doc in doc_col.items():
+        for doc_id, doc in doc_col.items():
             if len(doc.indexliste) == 0:
                 doc.indexliste, doc.wordlemmadict = l.get_index(doc.text)
             # if len(doc.index) == 0:
@@ -100,14 +101,13 @@ class Indexer:
             if len(doc.wordlemmadict) == 0 or len(doc.indexliste) == 0:
                 doc.indexliste, doc.wordlemmadict = l.get_index(doc.text)
 
-            for token,lemma in doc.wordlemmadict.items():
+            for token, lemma in doc.wordlemmadict.items():
                 if lemma in ilm:
                     if token not in ilm[lemma]:
                         ilm[lemma].append(token)
                 else:
                     ilm[lemma] = [token]
         return ilm
-
 
     @staticmethod
     def write_csv(doc_col, inv_index, csv_file="out/out_neu.csv"):
@@ -120,14 +120,17 @@ class Indexer:
         :param csv_file: path to csv file
         :return: String with all the data written to file
         '''
-        # set to German locale:
-        locale.setlocale(locale.LC_NUMERIC, "de_DE.UTF-8")
-        docnum = len(doc_col.keys())
-        inverse_lemma_mapping = Indexer.get_inverse_lemma_mapping(doc_col)
         zeilen = []
-        ii = [(token, cf,pl) for token, (cf,pl) in inv_index.items()]
+        # set numbers to German locale (use ',' as decimal delimiter)
+        locale.setlocale(locale.LC_NUMERIC, "de_DE.UTF-8")
+
+        docnum = len(doc_col.keys())  # number of docs
+        inverse_lemma_mapping = Indexer.get_inverse_lemma_mapping(doc_col)  # original words for each lemma
+        # sort inverted_index by collection frequency (only because we want this sorting in the csv...
+        ii = [(token, cf, pl) for token, (cf, pl) in inv_index.items()]
         ii = sorted(ii, key=lambda el: (-el[1], el[0]))
 
+        # Write Headline
         fobj_out = open(csv_file, "w")
         tf_heading = ''
         tfidf_heading = ''
@@ -136,14 +139,17 @@ class Indexer:
             tfidf_heading += ';TF-IDF ' + doc_id
         fobj_out.write('TOKEN;LEMMA;Collection Frequency' + tf_heading + ';IDF' + tfidf_heading + '\n')
 
-        for token, cf, pl in ii:    # sortiert nach cf
+        # write lines
+        for token, cf, pl in ii:  # sortiert nach cf
             originalwords = inverse_lemma_mapping[token]
-            for w in originalwords:
+            for w in originalwords:  # one line for each original word (rest of line depends only on lemma, so there will be many repeatings...)
                 zeile = w
                 zeile += ';' + token
                 zeile += ';' + locale.str(cf)
                 df = len(pl)
                 idf = log(docnum / df)
+
+                # due to desired order of the columns: cache the TF and TF-IDF columns and insert them later
                 tf_zeile = tfidf_zeile = ''
                 for doc_id in sorted(doc_col.keys()):
                     if doc_id in pl:
@@ -153,6 +159,8 @@ class Indexer:
                     tf_zeile += ';' + locale.str(ntf)
                     tf_idf = ntf * idf
                     tfidf_zeile += ';' + locale.str(tf_idf)
+
+                # finalize row and write out
                 zeile += tf_zeile + ';' + locale.str(idf) + tfidf_zeile
                 zeilen.append(zeile)
                 fobj_out.write(zeile + '\n')
