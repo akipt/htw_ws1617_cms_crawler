@@ -30,7 +30,7 @@ class LangProcessor:
                                               '/usr/share/hunspell/de_DE.aff')
         self.spellchecker_enc = self.spellchecker.get_dic_encoding()
 
-        self.lemmata_mapping = loadhelper.load_lemmata()
+        self.lemmata_mapping = loadhelper.load_lemmata(True)
 
         self.stopwords = loadhelper.load_stopwords(stopwords_file)
 

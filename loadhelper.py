@@ -62,22 +62,23 @@ def load_lemmata(loadnew=False, customfile='helpers/custom_lemmata.txt'):
             tigerlm = {k: v for k, v in tigerlm.items() if v != '-'}
             lm.update((k, v) for (k, v) in tigerlm.items() if v)
 
-            clm = {}
-            try:
-                with open(customfile) as f:
-                    for line in f:
-                        parts = line.split(';')
-                        if len(parts) == 2:
-                            a, w = parts[0], parts[1]
-                            clm[a] = w.strip()
-                lm.update(clm)
-            except FileNotFoundError:
-                print("Custom Lemmata could not be loaded.")
 
-            with open('helpers/lemmata_mapping.pickle', 'wb') as f:
-                pickle.dump(lm, f, protocol=2)
         except:
             print("Lemmata could not be loaded.")
+            with open('helpers/lemmata_mapping.pickle', 'wb') as f:
+                pickle.dump(lm, f, protocol=2)
+
+        clm = {}
+        try:
+            with open(customfile) as f:
+                for line in f:
+                    parts = line.split(';')
+                    if len(parts) == 2:
+                        a, w = parts[0], parts[1]
+                        clm[a] = w.strip()
+            lm.update(clm)
+        except:
+            print("Custom Lemmata could not be loaded.")
 
     else:
         with open('helpers/lemmata_mapping.pickle', 'rb') as f:
