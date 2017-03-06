@@ -95,6 +95,7 @@ Datensätze;Datensatz
 Datenwissenschaft;Wissenschaft
 Datenwissenschaftlern;Wissenschaftler
 Deskriptive;Deskriptiv
+deskriptive;deskriptiv
 Dokumentenanalyse;Analyse
 Dokumentenmenge;Menge
 Dritter;Dritter
