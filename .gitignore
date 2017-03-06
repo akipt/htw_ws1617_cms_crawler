@@ -10,3 +10,6 @@ __pycache__
 /.ipynb_checkpoints/Search-checkpoint.ipynb
 out
 .fuse*
+/helpers/custom_lemmata.txt_alt
+/helpers/custom_lemmata2.xlsx
+/helpers/invertierter_index_alt.pickle

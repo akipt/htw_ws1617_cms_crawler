@@ -133,6 +133,9 @@ class LangProcessor:
         # Entferne doppelte Bindestriche
         text = re.sub(r"[-–­]{2}", '-', t)
 
+        # Ersetze Slash durch Leerzeichen
+        text = text.replace('/', ' ')
+
         # Entferne unvollständige Kompositionsteile (inkl. 'und')
         text = re.sub(r"\w+[-–­]([.,]|\sund\s)", '', text)  # vorn (An- und Abreise)
         text = re.sub(r"(\sund\s|,\s)[-–­]\w+", '', text)  # hinten (Spielspaß und -freude)
